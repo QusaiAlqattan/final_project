@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home</title>
+    <link rel="stylesheet" href="src/main/resources/static/css/home.css">
+</head>
+<body>
+<h1>Collaborative Code Editor</h1>
+
+<button id="createFolderBtn">Create Folder</button>
+<button id="createFileBtn">Create File</button>
+
+<!-- Modal for creating folder/file -->
+<div id="modal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <span class="close" id="closeModal">&times;</span>
+        <h2 id="modalTitle">Create New Item</h2>
+        <label for="itemName">Name:</label>
+        <input type="text" id="itemName" required>
+        <div>
+            <label for="insideFolder">Should it be inside a folder?</label>
+            <input type="checkbox" id="insideFolder">
+        </div>
+        <div id="folderSelection" style="display: none;">
+            <label for="folderSelect">Select a Folder:</label>
+            <select id="folderSelect"></select>
+        </div>
+        <button id="submitBtn">Submit</button>
+    </div>
+</div>
+
+<script src="src/main/resources/static/javascript/home.js"></script>
+</body>
+</html>
