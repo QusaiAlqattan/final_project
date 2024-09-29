@@ -11,18 +11,13 @@ public class SystemUser {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long uniqueId;
 
+    private String username;
+    private String password;
+    private Integer githubID;
+
     @ManyToOne
     @JoinColumn(name = "role_id")
     private Role role;
-
-    @Column(nullable = false)
-    private String username;
-
-    private String password;
-
-    private String githubID;
-
-    private String email;
 
     @OneToMany(mappedBy = "creator")
     private List<File> files;
@@ -62,20 +57,12 @@ public class SystemUser {
         this.password = password;
     }
 
-    public String getGithubID() {
+    public Integer getGithubID() {
         return githubID;
     }
 
-    public void setGithubID(String githubID) {
+    public void setGithubID(Integer githubID) {
         this.githubID = githubID;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
     }
 
     public List<File> getFiles() {

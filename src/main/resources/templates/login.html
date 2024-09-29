@@ -4,10 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login</title>
-    <link rel="stylesheet" href="static/css/styles.css"> <!-- Link to your CSS file -->
+    <link rel="stylesheet" href="/custom/css/login.css"> <!-- Link to your CSS file -->
 </head>
 <body>
 <h1>Login</h1>
+
+<!-- Standard form login -->
 <form action="/login" method="post">
     <div>
         <label for="username">Username:</label>
@@ -22,9 +24,22 @@
 
 <a href="/register">register here</a>
 
+<!-- Error or logout message handling -->
 <div>
     <p th:if="${param.error}">Invalid username or password.</p>
     <p th:if="${param.logout}">You have been logged out.</p>
 </div>
+
+<!-- GitHub Login button -->
+<div>
+    <p>Or login using:</p>
+    <a href="/oauth2/authorization/github">
+        <button type="button" class="github-btn">
+            <img src="static/images/github-logo.png" alt="GitHub Logo" width="20">
+            Login with GitHub
+        </button>
+    </a>
+</div>
+
 </body>
 </html>

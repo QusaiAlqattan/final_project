@@ -1,5 +1,6 @@
 package org.example.final_project.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
@@ -12,47 +13,54 @@ public class File {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long uniqueId;
 
-    @ManyToOne
-    @JoinColumn(name = "folder_id")
-    private Folder folder;
+    private String name;
+    private String contents;
+    private String version;
+    private LocalDateTime timestamp;
 
     @ManyToOne
-    @JoinColumn(name = "creator_id")
-    private SystemUser creator;
+    @JoinColumn(name = "folder_id")
+    @JsonBackReference // Prevents infinite recursion when serializing
+    private Folder container;
 
     @ManyToOne
     @JoinColumn(name = "branch_id")
     private Branch branch;
 
-    @Column(nullable = false)
-    private String name;
-
-    @Lob
-    private String contents;
-
-    @Column(nullable = false)
-    private String version;
-
-    @Column(nullable = false)
-    private LocalDateTime timestamp;
+    @ManyToOne
+    @JoinColumn(name = "creator_id")
+    private SystemUser creator;
 
     @OneToMany(mappedBy = "file")
     private List<Note> notes;
 
-    public void setUniqueId(Long uniqueId) {
-        this.uniqueId = uniqueId;
+    @Transient  // This field won't be persisted in the database
+    private String containerName;
+
+    // Getters and Setters...
+
+    public String getContainerName() {
+        return containerName;
+    }
+
+    public void setContainerName(String containerName) {
+        this.containerName = containerName;
     }
 
     public Long getUniqueId() {
         return uniqueId;
     }
 
-    public Folder getFolder() {
-        return folder;
+    public void setUniqueId(Long uniqueId) {
+        this.uniqueId = uniqueId;
     }
 
-    public void setFolder(Folder folder) {
-        this.folder = folder;
+    public Folder getContainer() {
+        return container; // Updated getter
+    }
+
+    public void setContainer(Folder container) { // Updated setter
+        this.container = container;
     }
 
     public SystemUser getCreator() {

@@ -4,7 +4,59 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Home</title>
-    <link rel="stylesheet" href="src/main/resources/static/css/home.css">
+    <style>
+        /* styles.css */
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+        }
+
+        .modal {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            width: 300px;
+            position: relative;
+        }
+
+        .close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            cursor: pointer;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        table, th, td {
+            border: 1px solid black;
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+    </style>
 </head>
 <body>
 <h1>Collaborative Code Editor</h1>
@@ -31,6 +83,197 @@
     </div>
 </div>
 
-<script src="src/main/resources/static/javascript/home.js"></script>
+<!-- Table for displaying folders and files -->
+<h2>Folders and Files</h2>
+<table id="foldersTable">
+    <thead>
+    <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Container</th>
+        <th>Branch</th>
+    </tr>
+    </thead>
+    <tbody>
+    <!-- Dynamic rows will be added here -->
+    </tbody>
+</table>
+
+<form action="/logout" method="post">
+    <button type="submit">Logout</button>
+</form>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const createFolderBtn = document.getElementById("createFolderBtn");
+        const createFileBtn = document.getElementById("createFileBtn");
+        const modal = document.getElementById("modal");
+        const closeModal = document.getElementById("closeModal");
+        const itemName = document.getElementById("itemName");
+        const insideFolderCheckbox = document.getElementById("insideFolder");
+        const folderSelection = document.getElementById("folderSelection");
+        const folderSelect = document.getElementById("folderSelect");
+        const submitBtn = document.getElementById("submitBtn");
+        const foldersTable = document.getElementById("foldersTable").querySelector("tbody");
+        let currentAction = "";
+
+        // Fetch folders and files when page loads
+        fetchFoldersAndFiles();
+
+        createFolderBtn.addEventListener("click", function () {
+            currentAction = "folder";
+            openModal("Create Folder");
+        });
+
+        createFileBtn.addEventListener("click", function () {
+            currentAction = "file";
+            openModal("Create File");
+        });
+
+        closeModal.addEventListener("click", function () {
+            closeModalFunction();
+        });
+
+        insideFolderCheckbox.addEventListener("change", function () {
+            folderSelection.style.display = insideFolderCheckbox.checked ? "block" : "none";
+            if (insideFolderCheckbox.checked) {
+                fetchFolders();
+            }
+        });
+
+        submitBtn.addEventListener("click", function () {
+            submitItem();
+        });
+
+        function openModal(title) {
+            document.getElementById("modalTitle").innerText = title;
+            modal.style.display = "flex";
+            itemName.value = ""; // Reset input
+            insideFolderCheckbox.checked = false;
+            folderSelection.style.display = "none";
+            fetchFolders(); // Load folders when opening the modal
+        }
+
+        function closeModalFunction() {
+            modal.style.display = "none";
+        }
+
+        async function fetchFoldersAndFiles() {
+            try {
+                // Fetch both folders and files
+                const folderResponse = await fetch('/api/folders');
+                const folders = await folderResponse.json();
+
+                const fileResponse = await fetch('/api/files');
+                const files = await fileResponse.json();
+
+                populateTable(folders, files);
+            } catch (error) {
+                console.error('Error fetching folders and files:', error);
+            }
+        }
+
+        function populateTable(folders, files) {
+            foldersTable.innerHTML = ""; // Clear table
+
+            // Add folders to the table
+            folders.forEach(folder => {
+                const row = document.createElement("tr");
+
+                const nameCell = document.createElement("td");
+                nameCell.textContent = folder.name;
+
+                const typeCell = document.createElement("td");
+                typeCell.textContent = "Folder";
+
+                const containerCell = document.createElement("td");
+                containerCell.textContent = folder.containerName ? folder.containerName : "Root";
+
+                const branchCell = document.createElement("td");
+                branchCell.textContent = folder.branch ? folder.branch.name : "N/A";
+
+                row.appendChild(nameCell);
+                row.appendChild(typeCell);
+                row.appendChild(containerCell);
+                row.appendChild(branchCell);
+
+                foldersTable.appendChild(row);
+            });
+
+            // Add files to the table
+            files.forEach(file => {
+                console.log(file);
+                const row = document.createElement("tr");
+
+                const nameCell = document.createElement("td");
+                nameCell.textContent = file.name;
+
+                const typeCell = document.createElement("td");
+                typeCell.textContent = "File";
+
+                const containerCell = document.createElement("td");
+                containerCell.textContent = file.containerName ? file.containerName : "Root";
+
+                const branchCell = document.createElement("td");
+                branchCell.textContent = file.branch ? file.branch.name : "N/A";
+
+                row.appendChild(nameCell);
+                row.appendChild(typeCell);
+                row.appendChild(containerCell);
+                row.appendChild(branchCell);
+
+                foldersTable.appendChild(row);
+            });
+        }
+
+        async function fetchFolders() {
+            try {
+                const response = await fetch('/api/folders');
+                const folders = await response.json();
+                populateFolderSelect(folders);
+            } catch (error) {
+                console.error('Error fetching folders:', error);
+            }
+        }
+
+        function populateFolderSelect(folders) {
+            folderSelect.innerHTML = "";
+            folders.forEach(folder => {
+                const option = document.createElement("option");
+                option.value = folder.uniqueId; // Assuming uniqueId is the identifier
+                option.textContent = folder.name;
+                folderSelect.appendChild(option);
+            });
+        }
+
+        async function submitItem() {
+            const name = itemName.value;
+            const folderId = insideFolderCheckbox.checked ? folderSelect.value : null;
+            const data = {
+                name: name,
+                container: folderId ? { uniqueId: folderId } : null,
+            };
+
+            try {
+                const response = await fetch(`/api/${currentAction}s`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data),
+                });
+                if (response.ok) {
+                    alert(`${currentAction.charAt(0).toUpperCase() + currentAction.slice(1)} created successfully!`);
+                    fetchFoldersAndFiles(); // Refresh the folder and file list
+                    closeModalFunction();
+                } else {
+                    alert('Error creating the item.', response);
+                }
+            } catch (error) {
+                console.error('Error submitting the item:', error);
+            }
+        }
+    });
+</script>
 </body>
 </html>

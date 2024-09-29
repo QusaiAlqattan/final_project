@@ -1,5 +1,7 @@
 package org.example.final_project.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 
 import java.util.List;
@@ -11,22 +13,37 @@ public class Folder {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long uniqueId;
 
-    @ManyToOne
-    @JoinColumn(name = "container")
-    private Folder container;
+    private String name;
 
     @ManyToOne
     @JoinColumn(name = "branch_id")
     private Branch branch;
 
-    @Column(nullable = false)
-    private String name;
+    @ManyToOne
+    @JoinColumn(name = "container_id")
+    @JsonBackReference // Prevents infinite recursion when serializing
+    private Folder container;
 
     @OneToMany(mappedBy = "container")
+    @JsonManagedReference // Tells Jackson to manage the serialization of subFolders
     private List<Folder> subFolders;
 
-    @OneToMany(mappedBy = "folder")
+    @OneToMany(mappedBy = "container")
+    @JsonManagedReference // Tells Jackson to manage the serialization of subFolders
     private List<File> files;
+
+    @Transient  // This field won't be persisted in the database
+    private String containerName;
+
+    // Existing getters and setters...
+
+    public String getContainerName() {
+        return containerName;
+    }
+
+    public void setContainerName(String containerName) {
+        this.containerName = containerName;
+    }
 
     public Long getUniqueId() {
         return uniqueId;

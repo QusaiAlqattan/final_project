@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register</title>
+    <link rel="stylesheet" href="/css/register.css"> <!-- Link to your CSS -->
+</head>
+<body>
+<h1>Register</h1>
+<form action="/register" method="post">
+    <div>
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username" required>
+    </div>
+    <div>
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required>
+    </div>
+    <button type="submit">Register</button>
+</form>
+
+<div>
+    <p th:if="${error}">Error: [[${error}]]</p>
+</div>
+
+<a href="/login">Already have an account? Login here</a>
+</body>
+</html>
