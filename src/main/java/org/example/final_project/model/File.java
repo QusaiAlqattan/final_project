@@ -14,7 +14,7 @@ public class File {
     private Long uniqueId;
 
     private String name;
-    private String contents;
+    private String content;
     private String version;
     private LocalDateTime timestamp;
 
@@ -25,6 +25,7 @@ public class File {
 
     @ManyToOne
     @JoinColumn(name = "branch_id")
+    @JsonBackReference // Prevents infinite recursion when serializing
     private Branch branch;
 
     @ManyToOne
@@ -34,18 +35,51 @@ public class File {
     @OneToMany(mappedBy = "file")
     private List<Note> notes;
 
-    @Transient  // This field won't be persisted in the database
-    private String containerName;
+//    @Transient  // This field won't be persisted in the database
+//    private String containerName;
+//
+//    @Transient  // This field won't be persisted in the database
+//    private String branchName;
+//
+//    @Transient
+//    private Long containerId;  // Not stored in DB, but captured from request
+//
+//    @Transient
+//    private Long branchId;     // Not stored in DB, but captured from request
 
     // Getters and Setters...
 
-    public String getContainerName() {
-        return containerName;
-    }
-
-    public void setContainerName(String containerName) {
-        this.containerName = containerName;
-    }
+//    public Long getContainerId() {
+//        return containerId;
+//    }
+//
+//    public void setContainerId(Long containerId) {
+//        this.containerId = containerId;
+//    }
+//
+//    public Long getBranchId() {
+//        return branchId;
+//    }
+//
+//    public void setBranchId(Long branchId) {
+//        this.branchId = branchId;
+//    }
+//
+//    public String getContainerName() {
+//        return containerName;
+//    }
+//
+//    public void setContainerName(String containerName) {
+//        this.containerName = containerName;
+//    }
+//
+//    public String getBranchName() {
+//        return branchName;
+//    }
+//
+//    public void setBranchName(String branchName) {
+//        this.branchName = branchName;
+//    }
 
     public Long getUniqueId() {
         return uniqueId;
@@ -87,12 +121,12 @@ public class File {
         this.name = name;
     }
 
-    public String getContents() {
-        return contents;
+    public String getContent() {
+        return content;
     }
 
-    public void setContents(String contents) {
-        this.contents = contents;
+    public void setContent(String contents) {
+        this.content = contents;
     }
 
     public LocalDateTime getTimestamp() {

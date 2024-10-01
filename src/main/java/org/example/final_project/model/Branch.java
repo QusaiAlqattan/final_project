@@ -1,7 +1,9 @@
 package org.example.final_project.model;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
@@ -15,10 +17,22 @@ public class Branch {
     private String name;
 
     @OneToMany(mappedBy = "branch")
+    @JsonManagedReference // Tells Jackson to manage the serialization of subFolders
     private List<Folder> folders;
 
     @OneToMany(mappedBy = "branch")
+    @JsonManagedReference // Tells Jackson to manage the serialization of subFolders
     private List<File> files;
+
+    private LocalDateTime timestamp;
+
+    public LocalDateTime getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(LocalDateTime timestamp) {
+        this.timestamp = timestamp;
+    }
 
     public Long getUniqueId() {
         return uniqueId;

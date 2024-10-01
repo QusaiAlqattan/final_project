@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Collaborative Code Editor</title>
+    <title>Home</title>
     <style>
         /* styles.css */
         body {
@@ -61,67 +61,52 @@
 <body>
 <h1>Collaborative Code Editor</h1>
 
-<!-- Buttons for creating files, folders, and branches -->
-<button id="createFileBtn">Create File</button>
 <button id="createFolderBtn">Create Folder</button>
-<button id="createBranchBtn">Create Branch</button>
+<button id="createFileBtn">Create File</button>
+<button id="createBranchBtn">Create Branch</button> <!-- New button for creating branches -->
 
-<!-- Modal for creating a file -->
-<div id="fileModal" class="modal" style="display: none;">
+<!-- Modal for creating folder/file/branch -->
+<div id="modal" class="modal" style="display: none;">
     <div class="modal-content">
-        <span class="close" id="closeFileModal">&times;</span>
-        <h2>Create New File</h2>
-        <label for="fileName">File Name:</label>
-        <input type="text" id="fileName" required>
-        <div>
-            <label for="insideFolderFile">Should it be inside a folder?</label>
-            <input type="checkbox" id="insideFolderFile">
+        <span class="close" id="closeModal">&times;</span>
+        <h2 id="modalTitle">Create New Item</h2>
+        <label for="itemName">Name:</label>
+        <input type="text" id="itemName" required>
+
+        <div id="folderOptions" style="display: none;">
+            <div>
+                <label for="insideFolder">Should it be inside a folder?</label>
+                <input type="checkbox" id="insideFolder">
+            </div>
+            <div id="folderSelection" style="display: none;">
+                <label for="folderSelect">Select a Folder:</label>
+                <select id="folderSelect"></select>
+            </div>
+            <div>
+                <label for="insideBranch">Should it be in a branch?</label>
+                <input type="checkbox" id="insideBranch">
+            </div>
+            <div id="branchSelection" style="display: none;">
+                <label for="branchSelect">Select a Branch:</label>
+                <select id="branchSelect"></select>
+            </div>
         </div>
-        <div id="folderSelectionFile" style="display: none;">
-            <label for="folderSelectFile">Select a Folder:</label>
-            <select id="folderSelectFile"></select>
+
+        <div id="branchOptions" style="display: none;"> <!-- New section for parent branch selection -->
+            <div>
+                <label for="hasParentBranch">Should it have a parent branch?</label>
+                <input type="checkbox" id="hasParentBranch">
+            </div>
+            <div id="parentBranchSelection" style="display: none;">
+                <label for="parentBranchSelect">Select a Parent Branch:</label>
+                <select id="parentBranchSelect"></select>
+            </div>
         </div>
-        <button id="submitFileBtn">Create File</button>
+
+        <button id="submitBtn">Submit</button>
     </div>
 </div>
 
-<!-- Modal for creating a folder -->
-<div id="folderModal" class="modal" style="display: none;">
-    <div class="modal-content">
-        <span class="close" id="closeFolderModal">&times;</span>
-        <h2>Create New Folder</h2>
-        <label for="folderName">Folder Name:</label>
-        <input type="text" id="folderName" required>
-        <div>
-            <label for="insideFolderFolder">Should it be inside a folder?</label>
-            <input type="checkbox" id="insideFolderFolder">
-        </div>
-        <div id="folderSelectionFolder" style="display: none;">
-            <label for="folderSelectFolder">Select a Folder:</label>
-            <select id="folderSelectFolder"></select>
-        </div>
-        <button id="submitFolderBtn">Create Folder</button>
-    </div>
-</div>
-
-<!-- Modal for creating a branch -->
-<div id="branchModal" class="modal" style="display: none;">
-    <div class="modal-content">
-        <span class="close" id="closeBranchModal">&times;</span>
-        <h2>Create New Branch</h2>
-        <label for="branchName">Branch Name:</label>
-        <input type="text" id="branchName" required>
-        <div>
-            <label for="fromExistingBranch">Create from existing branch?</label>
-            <input type="checkbox" id="fromExistingBranch">
-        </div>
-        <div id="existingBranchSelection" style="display: none;">
-            <label for="branchSelect">Select an Existing Branch:</label>
-            <select id="branchSelect"></select>
-        </div>
-        <button id="submitBranchBtn">Create Branch</button>
-    </div>
-</div>
 
 <!-- Table for displaying folders -->
 <h2>Folders</h2>
@@ -146,6 +131,8 @@
         <th>Name</th>
         <th>Container</th>
         <th>Branch</th>
+        <th>Version</th>
+        <th>Timestamp</th>
     </tr>
     </thead>
     <tbody>
@@ -172,138 +159,160 @@
 
 <script>
     document.addEventListener("DOMContentLoaded", function () {
-        const createFileBtn = document.getElementById("createFileBtn");
         const createFolderBtn = document.getElementById("createFolderBtn");
-        const createBranchBtn = document.getElementById("createBranchBtn");
-
-        const fileModal = document.getElementById("fileModal");
-        const folderModal = document.getElementById("folderModal");
-        const branchModal = document.getElementById("branchModal");
-
-        const closeFileModal = document.getElementById("closeFileModal");
-        const closeFolderModal = document.getElementById("closeFolderModal");
-        const closeBranchModal = document.getElementById("closeBranchModal");
-
-        const fileName = document.getElementById("fileName");
-        const insideFolderFileCheckbox = document.getElementById("insideFolderFile");
-        const folderSelectionFile = document.getElementById("folderSelectionFile");
-        const folderSelectFile = document.getElementById("folderSelectFile");
-        const submitFileBtn = document.getElementById("submitFileBtn");
-
-        const folderName = document.getElementById("folderName");
-        const insideFolderFolderCheckbox = document.getElementById("insideFolderFolder");
-        const folderSelectionFolder = document.getElementById("folderSelectionFolder");
-        const folderSelectFolder = document.getElementById("folderSelectFolder");
-        const submitFolderBtn = document.getElementById("submitFolderBtn");
-
-        const branchName = document.getElementById("branchName");
-        const fromExistingBranchCheckbox = document.getElementById("fromExistingBranch");
-        const existingBranchSelection = document.getElementById("existingBranchSelection");
+        const createFileBtn = document.getElementById("createFileBtn");
+        const createBranchBtn = document.getElementById("createBranchBtn"); // New button reference
+        const modal = document.getElementById("modal");
+        const closeModal = document.getElementById("closeModal");
+        const itemName = document.getElementById("itemName");
+        const insideFolderCheckbox = document.getElementById("insideFolder");
+        const folderSelection = document.getElementById("folderSelection");
+        const folderSelect = document.getElementById("folderSelect");
+        const insideBranchCheckbox = document.getElementById("insideBranch");
+        const branchSelection = document.getElementById("branchSelection");
         const branchSelect = document.getElementById("branchSelect");
-        const submitBranchBtn = document.getElementById("submitBranchBtn");
-
+        const submitBtn = document.getElementById("submitBtn");
         const foldersTable = document.getElementById("foldersTable").querySelector("tbody");
         const filesTable = document.getElementById("filesTable").querySelector("tbody");
-        const branchesTable = document.getElementById("branchesTable").querySelector("tbody");
+        const branchesTable = document.getElementById("branchesTable").querySelector("tbody"); // New branches table reference
+        const hasParentBranchCheckbox = document.getElementById("hasParentBranch");
+        const parentBranchSelection = document.getElementById("parentBranchSelection");
+        const parentBranchSelect = document.getElementById("parentBranchSelect");
+        const branchModal = document.getElementById("branchModal");
+        const closeBranchModal = document.getElementById("closeBranchModal");
+        const branchNameInput = document.getElementById("branchName");
+        const parentBranchOptions = document.getElementById("branchOptions");
+        const submitBranchBtn = document.getElementById("submitBranchBtn");
+        let currentAction = "";
 
-        // Fetch folders, files, and branches when the page loads
-        fetchFoldersAndFiles();
-        fetchBranches();
-
-        createFileBtn.addEventListener("click", function () {
-            openFileModal();
-        });
+        // Fetch folders, files, and branches when page loads
+        fetchFoldersAndFilesAndBranches();
 
         createFolderBtn.addEventListener("click", function () {
-            openFolderModal();
+            currentAction = "folder";
+            openModal("Create Folder");
         });
 
+        createFileBtn.addEventListener("click", function () {
+            currentAction = "file";
+            openModal("Create File");
+        });
+
+        createBranchBtn.addEventListener("click", function () { // Event listener for creating branches
+            currentAction = "branch";
+            parentBranchOptions.style.display = "block";
+            openModal("Create Branch");
+        });
+
+        closeModal.addEventListener("click", function () {
+            closeModalFunction();
+        });
+
+        insideFolderCheckbox.addEventListener("change", function () {
+            folderSelection.style.display = insideFolderCheckbox.checked ? "block" : "none";
+            if (insideFolderCheckbox.checked) {
+                fetchFolders();
+            }
+        });
+
+        insideBranchCheckbox.addEventListener("change", function () {
+            branchSelection.style.display = insideBranchCheckbox.checked ? "block" : "none";
+            if (insideBranchCheckbox.checked) {
+                fetchBranches(); // Fetch branches when the checkbox is checked
+            }
+        });
+
+        submitBtn.addEventListener("click", function () {
+            submitItem();
+        });
+
+        // Show or hide the parent branch selection dropdown based on the checkbox state
+        hasParentBranchCheckbox.addEventListener("change", function () {
+            parentBranchSelection.style.display = hasParentBranchCheckbox.checked ? "block" : "none";
+            if (hasParentBranchCheckbox.checked) {
+                fetchBranchesForParent(); // Load branches to select as a parent branch
+            }
+        });
+
+        // Show branch creation modal
         createBranchBtn.addEventListener("click", function () {
-            openBranchModal();
-        });
-
-        closeFileModal.addEventListener("click", closeFileModalFunction);
-        closeFolderModal.addEventListener("click", closeFolderModalFunction);
-        closeBranchModal.addEventListener("click", closeBranchModalFunction);
-
-        insideFolderFileCheckbox.addEventListener("change", function () {
-            folderSelectionFile.style.display = insideFolderFileCheckbox.checked ? "block" : "none";
-            if (insideFolderFileCheckbox.checked) {
-                fetchFoldersForFile();
-            }
-        });
-
-        insideFolderFolderCheckbox.addEventListener("change", function () {
-            folderSelectionFolder.style.display = insideFolderFolderCheckbox.checked ? "block" : "none";
-            if (insideFolderFolderCheckbox.checked) {
-                fetchFoldersForFolder();
-            }
-        });
-
-        fromExistingBranchCheckbox.addEventListener("change", function () {
-            existingBranchSelection.style.display = fromExistingBranchCheckbox.checked ? "block" : "none";
-            if (fromExistingBranchCheckbox.checked) {
-                fetchBranches(); // Load existing branches for selection
-            }
-        });
-
-        submitFileBtn.addEventListener("click", submitFile);
-        submitFolderBtn.addEventListener("click", submitFolder);
-        submitBranchBtn.addEventListener("click", submitBranch);
-
-        function openFileModal() {
-            fileModal.style.display = "flex";
-            fileName.value = ""; // Reset input
-            insideFolderFileCheckbox.checked = false;
-            folderSelectionFile.style.display = "none";
-        }
-
-        function closeFileModalFunction() {
-            fileModal.style.display = "none";
-        }
-
-        function openFolderModal() {
-            folderModal.style.display = "flex";
-            folderName.value = ""; // Reset input
-            insideFolderFolderCheckbox.checked = false;
-            folderSelectionFolder.style.display = "none";
-        }
-
-        function closeFolderModalFunction() {
-            folderModal.style.display = "none";
-        }
-
-        function openBranchModal() {
             branchModal.style.display = "flex";
-            branchName.value = ""; // Reset input
-            fromExistingBranchCheckbox.checked = false;
-            existingBranchSelection.style.display = "none";
-        }
+            branchNameInput.value = ""; // Reset input
+            hasParentBranchCheckbox.checked = false;
+            parentBranchSelection.style.display = "none"; // Hide parent branch selection
+            fetchBranches(); // Load branches when opening the modal
+        });
 
-        function closeBranchModalFunction() {
+        // Close branch modal
+        closeBranchModal.addEventListener("click", function () {
             branchModal.style.display = "none";
+        });
+
+        // Fetch branches for the parent branch selection dropdown
+        async function fetchBranchesForParent() {
+            try {
+                const response = await fetch('/api/branches');
+                const branches = await response.json();
+                populateParentBranchSelect(branches);
+            } catch (error) {
+                console.error('Error fetching parent branches:', error);
+            }
         }
 
-        async function fetchFoldersAndFiles() {
+        function populateParentBranchSelect(branches) {
+            parentBranchSelect.innerHTML = ""; // Clear the existing options
+            branches.forEach(branch => {
+                const option = document.createElement("option");
+                option.value = branch.uniqueId; // Assuming uniqueId is the identifier
+                option.textContent = branch.name;
+                parentBranchSelect.appendChild(option);
+            });
+        }
+
+        function openModal(title) {
+            document.getElementById("modalTitle").innerText = title;
+            modal.style.display = "flex";
+            itemName.value = ""; // Reset input
+            insideFolderCheckbox.checked = false;
+            insideBranchCheckbox.checked = false;
+            folderSelection.style.display = "none";
+            branchSelection.style.display = "none";
+            fetchFolders(); // Load folders when opening the modal, except for branch creation
+            if (currentAction === "branch") {
+                document.getElementById("folderOptions").style.display = "none"; // Hide folder options for branches
+            } else {
+                document.getElementById("folderOptions").style.display = "block"; // Show folder options for folders/files
+            }
+        }
+
+        function closeModalFunction() {
+            modal.style.display = "none";
+            parentBranchOptions.style.display = "none";
+        }
+
+        async function fetchFoldersAndFilesAndBranches() {
             try {
-                // Fetch both folders and files
                 const folderResponse = await fetch('/api/folders');
                 const folders = await folderResponse.json();
 
                 const fileResponse = await fetch('/api/files');
                 const files = await fileResponse.json();
 
-                populateFoldersTable(folders);
-                populateFilesTable(files);
+                const branchResponse = await fetch('/api/branches');
+                const branches = await branchResponse.json();
+
+                populateTables(folders, files);
+                populateBranchesTable(branches); // New function to populate branches table
             } catch (error) {
-                console.error('Error fetching folders and files:', error);
+                console.error('Error fetching data:', error);
             }
         }
 
-        function populateFoldersTable(folders) {
-            foldersTable.innerHTML = ""; // Clear table
+        function populateTables(folders, files) {
+            foldersTable.innerHTML = ""; // Clear folders table
+            filesTable.innerHTML = "";   // Clear files table
 
-            // Add folders to the table
+            // Populate folders table
             folders.forEach(folder => {
                 const row = document.createElement("tr");
 
@@ -314,7 +323,7 @@
                 containerCell.textContent = folder.containerName ? folder.containerName : "Root";
 
                 const branchCell = document.createElement("td");
-                branchCell.textContent = folder.branch ? folder.branch.name : "N/A";
+                branchCell.textContent = folder.branchName ? folder.branchName : "N/A";
 
                 row.appendChild(nameCell);
                 row.appendChild(containerCell);
@@ -322,12 +331,8 @@
 
                 foldersTable.appendChild(row);
             });
-        }
 
-        function populateFilesTable(files) {
-            filesTable.innerHTML = ""; // Clear table
-
-            // Add files to the table
+            // Populate files table
             files.forEach(file => {
                 const row = document.createElement("tr");
 
@@ -338,13 +343,54 @@
                 containerCell.textContent = file.containerName ? file.containerName : "Root";
 
                 const branchCell = document.createElement("td");
-                branchCell.textContent = file.branch ? file.branch.name : "N/A";
+                branchCell.textContent = file.branchName ? file.branchName : "N/A";
+
+                const versionCell = document.createElement("td");
+                versionCell.textContent = file.version ? file.version : "N/A";
+
+                const timestampCell = document.createElement("td");
+                timestampCell.textContent = file.timestamp ? file.timestamp : "N/A";
 
                 row.appendChild(nameCell);
                 row.appendChild(containerCell);
                 row.appendChild(branchCell);
+                row.appendChild(versionCell);
+                row.appendChild(timestampCell);
 
                 filesTable.appendChild(row);
+            });
+        }
+
+        function populateBranchesTable(branches) {
+            branchesTable.innerHTML = ""; // Clear branches table
+            branches.forEach(branch => {
+                const row = document.createElement("tr");
+
+                const nameCell = document.createElement("td");
+                nameCell.textContent = branch.name;
+
+                row.appendChild(nameCell);
+                branchesTable.appendChild(row);
+            });
+        }
+
+        async function fetchFolders() {
+            try {
+                const response = await fetch('/api/folders');
+                const folders = await response.json();
+                populateFolderSelect(folders);
+            } catch (error) {
+                console.error('Error fetching folders:', error);
+            }
+        }
+
+        function populateFolderSelect(folders) {
+            folderSelect.innerHTML = "";
+            folders.forEach(folder => {
+                const option = document.createElement("option");
+                option.value = folder.uniqueId; // Assuming uniqueId is the identifier
+                option.textContent = folder.name;
+                folderSelect.appendChild(option);
             });
         }
 
@@ -352,65 +398,13 @@
             try {
                 const response = await fetch('/api/branches');
                 const branches = await response.json();
-                populateBranchesTable(branches);
                 populateBranchSelect(branches);
             } catch (error) {
                 console.error('Error fetching branches:', error);
             }
         }
 
-        function populateBranchesTable(branches) {
-            branchesTable.innerHTML = ""; // Clear table
-            branches.forEach(branch => {
-                const row = document.createElement("tr");
-                const nameCell = document.createElement("td");
-                nameCell.textContent = branch.name;
-                row.appendChild(nameCell);
-                branchesTable.appendChild(row);
-            });
-        }
-
-        async function fetchFoldersForFile() {
-            try {
-                const response = await fetch('/api/folders');
-                const folders = await response.json();
-                populateFolderSelectFile(folders);
-            } catch (error) {
-                console.error('Error fetching folders:', error);
-            }
-        }
-
-        function populateFolderSelectFile(folders) {
-            folderSelectFile.innerHTML = "";
-            folders.forEach(folder => {
-                const option = document.createElement("option");
-                option.value = folder.uniqueId; // Assuming uniqueId is the identifier
-                option.textContent = folder.name;
-                folderSelectFile.appendChild(option);
-            });
-        }
-
-        async function fetchFoldersForFolder() {
-            try {
-                const response = await fetch('/api/folders');
-                const folders = await response.json();
-                populateFolderSelectFolder(folders);
-            } catch (error) {
-                console.error('Error fetching folders:', error);
-            }
-        }
-
-        function populateFolderSelectFolder(folders) {
-            folderSelectFolder.innerHTML = "";
-            folders.forEach(folder => {
-                const option = document.createElement("option");
-                option.value = folder.uniqueId; // Assuming uniqueId is the identifier
-                option.textContent = folder.name;
-                folderSelectFolder.appendChild(option);
-            });
-        }
-
-        async function populateBranchSelect(branches) {
+        function populateBranchSelect(branches) {
             branchSelect.innerHTML = "";
             branches.forEach(branch => {
                 const option = document.createElement("option");
@@ -420,89 +414,71 @@
             });
         }
 
-        async function submitFile() {
-            const name = fileName.value;
-            const folderId = insideFolderFileCheckbox.checked ? folderSelectFile.value : null;
-            const data = {
-                name: name,
-                container: folderId ? { uniqueId: folderId } : null,
-            };
+        async function submitItem() {
+            const name = itemName.value;
+            const insideFolder = insideFolderCheckbox.checked;
+            const selectedFolderId = insideFolder ? folderSelect.value : null;
+            const insideBranch = insideBranchCheckbox.checked;
+            const selectedBranchId = insideBranch ? branchSelect.value : null;
+
+            const hasParentBranch = hasParentBranchCheckbox.checked;
+            const parentBranchId = hasParentBranch ? parentBranchSelect.value : null; // Get the selected parent branch
+
 
             try {
-                const response = await fetch(`/api/files`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(data),
-                });
-                if (response.ok) {
-                    alert('File created successfully!');
-                    fetchFoldersAndFiles(); // Refresh the folder and file list
-                    closeFileModalFunction();
-                } else {
-                    alert('Error creating the file.', response);
+                if (currentAction === "folder") {
+                    // Create Folder API Call
+                    await fetch('/api/folders', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json; charset=UTF-8',
+                        },
+                        body: JSON.stringify({
+                            name: name,
+                            containerId: selectedFolderId || null,
+                            branchId: selectedBranchId || null,
+                        })
+                    });
+                } else if (currentAction === "file") {
+                    // Create File API Call
+                    await fetch('/api/files', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            name: name,
+                            containerId: selectedFolderId || null,
+                            branchId: selectedBranchId || null
+                        })
+                    });
+                } else if (currentAction === "branch") { // Create Branch API Call
+                    await fetch('/api/branches', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            name: name,
+                            parentBranchId: parentBranchId // Sending the parent branch ID if available
+                        })
+                    });
                 }
-            } catch (error) {
-                console.error('Error submitting the file:', error);
             }
-        }
-
-        async function submitFolder() {
-            const name = folderName.value;
-            const folderId = insideFolderFolderCheckbox.checked ? folderSelectFolder.value : null;
-            const data = {
-                name: name,
-                container: folderId ? { uniqueId: folderId } : null,
-            };
-
-            try {
-                const response = await fetch(`/api/folders`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(data),
-                });
-                if (response.ok) {
-                    alert('Folder created successfully!');
-                    fetchFoldersAndFiles(); // Refresh the folder and file list
-                    closeFolderModalFunction();
-                } else {
-                    alert('Error creating the folder.', response);
-                }
-            } catch (error) {
-                console.error('Error submitting the folder:', error);
+            catch (error) {
+                console.error('Error submitting the item:', error);
             }
-        }
 
-        async function submitBranch() {
-            const name = branchName.value;
-            const parentBranchId = fromExistingBranchCheckbox.checked ? branchSelect.value : null;
-            const data = {
-                name: name,
-                parentBranch: parentBranchId ? { uniqueId: parentBranchId } : null,
-            };
-
-            try {
-                const response = await fetch(`/api/branches`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(data),
-                });
-                if (response.ok) {
-                    alert('Branch created successfully!');
-                    fetchBranches(); // Refresh the branches list
-                    closeBranchModalFunction();
-                } else {
-                    alert('Error creating the branch.', response);
-                }
-            } catch (error) {
-                console.error('Error submitting the branch:', error);
-            }
+            closeModalFunction();
+            fetchFoldersAndFilesAndBranches(); // Refresh the tables
         }
+        // Open modal for creating branch with parent branch options
+        createBranchBtn.addEventListener("click", function () {
+            currentAction = "branch";
+            openModal("Create Branch");
+            document.getElementById("folderOptions").style.display = "none"; // Hide folder options for branches
+            document.getElementById("branchOptions").style.display = "block"; // Show parent branch options
+        });
     });
 </script>
 </body>
