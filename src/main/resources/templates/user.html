@@ -64,6 +64,7 @@
 <button id="createFolderBtn">Create Folder</button>
 <button id="createFileBtn">Create File</button>
 <button id="createBranchBtn">Create Branch</button> <!-- New button for creating branches -->
+<button id="mergeBranchesBtn">Merge Branches</button>
 
 <!-- Modal for creating folder/file/branch -->
 <div id="modal" class="modal" style="display: none;">
@@ -106,6 +107,27 @@
         <button id="submitBtn">Submit</button>
     </div>
 </div>
+
+<!-- Modal for merging branches -->
+<div id="mergeModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <span class="close" id="closeMergeModal">&times;</span>
+        <h2 id="mergeModalTitle">Merge Branches</h2>
+
+        <div>
+            <label for="sourceBranchSelect">Select Source Branch:</label>
+            <select id="sourceBranchSelect"></select>
+        </div>
+
+        <div>
+            <label for="destinationBranchSelect">Select Destination Branch:</label>
+            <select id="destinationBranchSelect"></select>
+        </div>
+
+        <button id="mergeSubmitBtn">Merge Branches</button>
+    </div>
+</div>
+
 
 
 <!-- Table for displaying folders -->
@@ -179,10 +201,16 @@
         const parentBranchSelection = document.getElementById("parentBranchSelection");
         const parentBranchSelect = document.getElementById("parentBranchSelect");
         const branchModal = document.getElementById("branchModal");
-        const closeBranchModal = document.getElementById("closeBranchModal");
+        // const closeBranchModal = document.getElementById("closeBranchModal");
         const branchNameInput = document.getElementById("branchName");
         const parentBranchOptions = document.getElementById("branchOptions");
         const submitBranchBtn = document.getElementById("submitBranchBtn");
+        const mergeBranchesBtn = document.getElementById("mergeBranchesBtn");
+        const mergeModal = document.getElementById("mergeModal");
+        const closeMergeModal = document.getElementById("closeMergeModal");
+        const sourceBranchSelect = document.getElementById("sourceBranchSelect");
+        const destinationBranchSelect = document.getElementById("destinationBranchSelect");
+        const mergeSubmitBtn = document.getElementById("mergeSubmitBtn");
         let currentAction = "";
 
         // Fetch folders, files, and branches when page loads
@@ -244,8 +272,79 @@
         });
 
         // Close branch modal
-        closeBranchModal.addEventListener("click", function () {
-            branchModal.style.display = "none";
+        // closeBranchModal.addEventListener("click", function () {
+        //     branchModal.style.display = "none";
+        // });
+
+        // open the merge modal
+        mergeBranchesBtn.addEventListener("click", function () {
+            openMergeModal();
+        })
+
+        // Open the merge modal when needed (you can trigger this with a button)
+        function openMergeModal() {
+            mergeModal.style.display = "flex";
+            fetchBranchesForMerge();
+        }
+
+        // Close the merge modal
+        closeMergeModal.addEventListener("click", function () {
+            mergeModal.style.display = "none";
+        });
+
+        // Fetch branches for the source and destination selection
+        async function fetchBranchesForMerge() {
+            try {
+                const response = await fetch('/api/branches');
+                const branches = await response.json();
+                populateMergeBranchSelect(branches);
+            } catch (error) {
+                console.error('Error fetching branches for merge:', error);
+            }
+        }
+
+        // Populate the branch select dropdowns
+        function populateMergeBranchSelect(branches) {
+            sourceBranchSelect.innerHTML = ""; // Clear existing options
+            destinationBranchSelect.innerHTML = ""; // Clear existing options
+
+            branches.forEach(branch => {
+                const sourceOption = document.createElement("option");
+                sourceOption.value = branch.uniqueId; // Assuming uniqueId is the identifier
+                sourceOption.textContent = branch.name;
+                sourceBranchSelect.appendChild(sourceOption);
+
+                const destinationOption = document.createElement("option");
+                destinationOption.value = branch.uniqueId; // Assuming uniqueId is the identifier
+                destinationOption.textContent = branch.name;
+                destinationBranchSelect.appendChild(destinationOption);
+            });
+        }
+
+        // Handle the merge submission
+        mergeSubmitBtn.addEventListener("click", async function () {
+            const sourceBranchId = sourceBranchSelect.value;
+            const destinationBranchId = destinationBranchSelect.value;
+
+            try {
+
+                // Call your API for merging branches
+                await fetch('/api/branches/merge', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        sourceBranchId: sourceBranchId,
+                        destinationBranchId: destinationBranchId
+                    })
+                });
+                alert("Branches merged successfully!");
+            } catch (error) {
+                console.error('Error merging branches:', error);
+            }
+
+            mergeModal.style.display = "none"; // Close the modal after submission
         });
 
         // Fetch branches for the parent branch selection dropdown
