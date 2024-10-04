@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class BranchService {
@@ -52,8 +53,19 @@ public class BranchService {
                 Branch parentBranch = parentBranchOpt.get();
 
                 // Clone the parent branch's tree structure
-                Set<Folder> clonedFolders = cloneFolders(new HashSet<>(parentBranch.getFolders()), branch); // Pass the new branch for proper linkage
-                Set<File> clonedFiles = cloneFiles(new HashSet<>(parentBranch.getFiles()), branch);
+                Set<Folder> rootFolders = parentBranch.getFolders()
+                        .stream()
+                        .filter(folder -> folder.getContainer() == null) // Only include folders without a container
+                        .collect(Collectors.toSet());
+
+                // Retrieve only the root-level files (those that do not have a container)
+                Set<File> rootFiles = parentBranch.getFiles()
+                        .stream()
+                        .filter(file -> file.getContainer() == null) // Only include files without a container (i.e., root-level files)
+                        .collect(Collectors.toSet());
+
+                Set<Folder> clonedFolders = cloneFolders(rootFolders, branch); // Pass the new branch for proper linkage
+                Set<File> clonedFiles = cloneFiles(rootFiles, branch);
 
                 branch.setFolders(new ArrayList<>(clonedFolders));
                 branch.setFiles(new ArrayList<>(clonedFiles));
