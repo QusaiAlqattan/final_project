@@ -2,6 +2,7 @@ package org.example.final_project.service;
 
 import org.example.final_project.dto.FileDTO;
 import org.example.final_project.dto.FolderDTO;
+import org.example.final_project.model.Branch;
 import org.example.final_project.model.File;
 import org.example.final_project.model.Folder;
 import org.example.final_project.repository.BranchRepository;
@@ -56,14 +57,20 @@ public class FileService {
             // add to the sub folders in the container
             List<File> subFiles = container.getFiles();
             subFiles.add(file);
-
             container.setFiles(subFiles);
             folderRepository.save(container);
         }
 
         // Set branch if provided
         if (fileDto.getBranchId() != null && branchRepository.findById(fileDto.getBranchId()).isPresent()) {
-            file.setBranch(branchRepository.findById(fileDto.getBranchId()).get());
+            Branch branch = branchRepository.findById(fileDto.getBranchId()).get();
+            file.setBranch(branch);
+
+            // update branch
+            List<File> branchFiles = branch.getFiles();
+            branchFiles.add(file);
+            branch.setFiles(branchFiles);
+            branchRepository.save(branch);
         }
 
         //TODO: set creator, after managing sessions & oauth

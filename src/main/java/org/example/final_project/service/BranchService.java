@@ -111,6 +111,8 @@ public class BranchService {
             clonedFolder.setName(originalFolder.getName()); // Copy folder name
             clonedFolder.setBranch(newBranch); // Link the folder to the new branch
 
+            System.out.println(originalFolder.getFiles());
+
             clonedFolder.setFiles(new ArrayList<>(cloneFiles(new HashSet<>(originalFolder.getFiles()), newBranch))); // Clone files inside this folder
 
             folderRepository.save(clonedFolder); // save so i can reference in the sub folders and sub files
@@ -124,6 +126,19 @@ public class BranchService {
             for (Folder folder : clonedFolder.getSubFolders()) {
                 folder.setContainer(clonedFolder);
                 folderRepository.save(folder);
+            }
+
+            // update branch folders
+            if (newBranch.getFolders() != null){
+                List<Folder> branchFolders = newBranch.getFolders();
+                branchFolders.add(clonedFolder);
+                newBranch.setFolders(branchFolders);
+                branchRepository.save(newBranch);
+            }else{
+                List<Folder> clonedFolderList = new ArrayList<>();
+                clonedFolderList.add(clonedFolder);
+                newBranch.setFolders(clonedFolderList);
+                branchRepository.save(newBranch);
             }
 
             clonedFolders.add(clonedFolder);
@@ -141,6 +156,8 @@ public class BranchService {
     private Set<File> cloneFiles(Set<File> originalFiles, Branch newBranch) {
         Set<File> clonedFiles = new HashSet<>();
 
+        System.out.println(originalFiles);
+
         for (File originalFile : originalFiles) {
 //            clonedFiles.add(cloneFileMerge(originalFile, newBranch));
 
@@ -156,6 +173,17 @@ public class BranchService {
 
             // create file in database
             fileRepository.save(clonedFile);
+
+            // update branch files
+            if (newBranch.getFiles() != null){
+                List<File> branchFiles = newBranch.getFiles();
+                branchFiles.add(clonedFile);
+            }else{
+                List<File> clonedFileList = new ArrayList<>();
+                clonedFileList.add(clonedFile);
+                newBranch.setFiles(clonedFileList);
+                branchRepository.save(newBranch);
+            }
         }
 
         return clonedFiles;
@@ -168,6 +196,7 @@ public class BranchService {
     //  !   ///////////////////////////////////////////////////////////////
     //  !   merge branches
     //  !   ///////////////////////////////////////////////////////////////
+
     public void mergeBranches(Long sourceBranchId, Long destinationBranchId) throws Exception {
         Optional<Branch> sourceBranchOpt = branchRepository.findById(sourceBranchId);
         Optional<Branch> destinationBranchOpt = branchRepository.findById(destinationBranchId);
@@ -188,9 +217,13 @@ public class BranchService {
         mergeFolders(sourceBranch, destinationBranch);
         // Then merge files
         mergeFiles(sourceBranch, destinationBranch);
+
+        branchRepository.save(destinationBranch);
     }
 
     private void mergeFiles(Branch sourceBranch, Branch destinationBranch) {
+        // clone the files in the Root
+
 //        List<File> sourceFiles = sourceBranch.getFiles();
 //        List<File> destinationFiles = destinationBranch.getFiles();
 
@@ -213,13 +246,16 @@ public class BranchService {
 
             if (destFileOpt.isPresent()) {
                 File destFile = destFileOpt.get();
-                handleFileConflict(sourceFile, destFile);
+                File newFile = handleFileConflict(sourceFile, destFile);
+                destinationFiles.add(newFile); // Add to destination
+
             } else {
                 // Clone the file to the destination
                 File newFile = cloneFileMerge(sourceFile, destinationBranch);
                 destinationFiles.add(newFile); // Add to destination
             }
         }
+        destinationBranch.setFiles(destinationFiles);
     }
 
     private File cloneFileMerge(File sourceFile, Branch destinationBranch) {
@@ -231,16 +267,16 @@ public class BranchService {
         newFile.setBranch(destinationBranch); // Link to the destination branch
         fileRepository.save(newFile);
 
-//        List<File> destinationBranchFiles = destinationBranch.getFiles();
-//        destinationBranchFiles.add(newFile);
-//        destinationBranch.setFiles(destinationBranchFiles);
-//
-//        branchRepository.save(destinationBranch);
+        // update branch files
+        List<File> destinationBranchFiles = destinationBranch.getFiles();
+        destinationBranchFiles.add(newFile);
+        destinationBranch.setFiles(destinationBranchFiles);
+        branchRepository.save(destinationBranch);
 
         return newFile;
     }
 
-    private void handleFileConflict(File sourceFile, File destinationFile) {
+    private File handleFileConflict(File sourceFile, File destinationFile) {
         // Conflict resolution strategy
         // Example: Keep both versions with a version suffix
         String newName = sourceFile.getName() + "_conflict_" + LocalDateTime.now();
@@ -248,13 +284,22 @@ public class BranchService {
         newFile.setName(newName);
         newFile.setContent(sourceFile.getContent());
         newFile.setVersion("conflict");
-        newFile.setBranch(destinationFile.getBranch());
 
-        // You can add any additional metadata or settings here
-        destinationFile.getBranch().getFiles().add(newFile);
+        Branch destinationBranch = destinationFile.getBranch();
+        newFile.setBranch(destinationBranch);
+
+        // update branch
+        List<File> branchFiles = destinationBranch.getFiles();
+        branchFiles.add(newFile);
+        destinationBranch.setFiles(branchFiles);
+        branchRepository.save(destinationBranch);
+
+        return newFile;
     }
 
     private void mergeFolders(Branch sourceBranch, Branch destinationBranch) {
+        // merge folder in the Root
+
 //        List<Folder> sourceFolders = sourceBranch.getFolders();
 //        List<Folder> destinationFolders = destinationBranch.getFolders();
 
@@ -310,11 +355,11 @@ public class BranchService {
         // create folder in database
         folderRepository.save(clonedFolder);
 
-//        List<Folder> destinationBranchFolders = destinationBranch.getFolders();
-//        destinationBranchFolders.add(clonedFolder);
-//        destinationBranch.setFolders(destinationBranchFolders);
-//
-//        branchRepository.save(destinationBranch);
+        // update branch folders
+        List<Folder> destinationBranchFolders = destinationBranch.getFolders();
+        destinationBranchFolders.add(clonedFolder);
+        destinationBranch.setFolders(destinationBranchFolders);
+        branchRepository.save(destinationBranch);
 
         // create an empty clone
 //        Folder newFolder = new Folder();
@@ -357,7 +402,9 @@ public class BranchService {
                     handleFolderConflict(sourceSubFolder, destFolder);
                 } else {
                     // Clone the folder to the destination
-                    cloneFolderMerge(sourceSubFolder, destinationFolder.getBranch());
+                    Folder clonedsourceSubFolder = cloneFolderMerge(sourceSubFolder, destinationFolder.getBranch());
+                    clonedsourceSubFolder.setContainer(destinationFolder);
+                    folderRepository.save(clonedsourceSubFolder);
                 }
             }
 
@@ -383,9 +430,27 @@ public class BranchService {
             // in not then clone it
             if (destFileOpt.isPresent()) {
                 File destFile = destFileOpt.get();
-                handleFileConflict(sourceFile, destFile); // Handle file conflict if needed
+                File conflictFile = handleFileConflict(sourceFile, destFile); // Handle file conflict if needed
+                conflictFile.setContainer(destinationFolder);
+
+                // add to the sub folders in the container
+                List<File> subFiles = destinationFolder.getFiles();
+                subFiles.add(conflictFile);
+                destinationFolder.setFiles(subFiles);
+                folderRepository.save(destinationFolder);
+
+                fileRepository.save(conflictFile);
             } else {
-                cloneFileMerge(sourceFile, destinationFolder.getBranch()); // Add to destination
+                File clonedSourceFile = cloneFileMerge(sourceFile, destinationFolder.getBranch()); // Add to destination
+                clonedSourceFile.setContainer(destinationFolder);
+
+                // add to the sub folders in the container
+                List<File> subFiles = destinationFolder.getFiles();
+                subFiles.add(clonedSourceFile);
+                destinationFolder.setFiles(subFiles);
+                folderRepository.save(destinationFolder);
+
+                fileRepository.save(clonedSourceFile);
             }
         }
     }

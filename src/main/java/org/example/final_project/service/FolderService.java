@@ -10,7 +10,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class FolderService {
@@ -41,7 +40,14 @@ public class FolderService {
 
         // Set branch if provided
         if (folderDTO.getBranchId() != null && branchRepository.findById(folderDTO.getBranchId()).isPresent()) {
-            folder.setBranch(branchRepository.findById(folderDTO.getBranchId()).get());
+            Branch branch = branchRepository.findById(folderDTO.getBranchId()).get();
+            folder.setBranch(branch);
+
+            // update branch
+            List<Folder> branchFolders = branch.getFolders();
+            branchFolders.add(folder);
+            branch.setFolders(branchFolders);
+            branchRepository.save(branch);
         }
 
         // Set parent folder if provided (for nested folders)
