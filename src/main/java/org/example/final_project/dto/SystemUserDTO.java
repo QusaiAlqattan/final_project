@@ -9,6 +9,7 @@ public class SystemUserDTO {
     private String password; // Consider removing this in DTOs to avoid sending sensitive data
     private Integer githubID;
     private Long roleId; // ID of the associated role
+    private String role;
     private List<Long> fileIds; // List of IDs of files created by this user
     private List<Long> noteIds; // List of IDs of notes written by this user
 
@@ -52,6 +53,14 @@ public class SystemUserDTO {
 
     public void setRoleId(Long roleId) {
         this.roleId = roleId;
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
     }
 
     public List<Long> getFileIds() {
