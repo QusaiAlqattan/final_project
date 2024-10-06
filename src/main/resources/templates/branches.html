@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Branches</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        table, th, td {
+            border: 1px solid black;
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+
+        .modal {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            width: 300px;
+            position: relative;
+        }
+
+        .close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+<h1>Branches</h1>
+
+<button id="createBranchBtn">Create Branch</button>
+<button id="mergeBranchesBtn">Merge Branches</button>
+
+<!-- Table for displaying branches -->
+<h2>Branches</h2>
+<table id="branchesTable">
+    <thead>
+    <tr>
+        <th>Branch Name</th>
+    </tr>
+    </thead>
+    <tbody>
+    <!-- Dynamic rows for branches will be added here -->
+    </tbody>
+</table>
+
+<!-- Modal for creating branch -->
+<div id="modal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <span class="close" id="closeModal">&times;</span>
+        <h2>Create Branch</h2>
+        <label for="branchName">Branch Name:</label>
+        <input type="text" id="branchName" required>
+        <button id="submitBtn">Submit</button>
+    </div>
+</div>
+
+<!-- Modal for merging branches -->
+<div id="mergeModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <span class="close" id="closeMergeModal">&times;</span>
+        <h2>Merge Branches</h2>
+
+        <label for="sourceBranchSelect">Source Branch:</label>
+        <select id="sourceBranchSelect"></select>
+
+        <label for="destinationBranchSelect">Destination Branch:</label>
+        <select id="destinationBranchSelect"></select>
+
+        <button id="mergeSubmitBtn">Merge</button>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const createBranchBtn = document.getElementById("createBranchBtn");
+        const mergeBranchesBtn = document.getElementById("mergeBranchesBtn");
+        const modal = document.getElementById("modal");
+        const closeModal = document.getElementById("closeModal");
+        const submitBtn = document.getElementById("submitBtn");
+        const branchesTable = document.getElementById("branchesTable").querySelector("tbody");
+        const branchNameInput = document.getElementById("branchName");
+        const mergeModal = document.getElementById("mergeModal");
+        const closeMergeModal = document.getElementById("closeMergeModal");
+        const sourceBranchSelect = document.getElementById("sourceBranchSelect");
+        const destinationBranchSelect = document.getElementById("destinationBranchSelect");
+        const mergeSubmitBtn = document.getElementById("mergeSubmitBtn");
+
+        fetchBranches();
+
+        // Open branch creation modal
+        createBranchBtn.addEventListener("click", function () {
+            modal.style.display = "flex";
+            branchNameInput.value = ""; // Clear input
+        });
+
+        // Close branch creation modal
+        closeModal.addEventListener("click", function () {
+            modal.style.display = "none";
+        });
+
+        // Open branch merge modal
+        mergeBranchesBtn.addEventListener("click", function () {
+            mergeModal.style.display = "flex";
+            fetchBranchesForMerge();
+        });
+
+        // Close merge modal
+        closeMergeModal.addEventListener("click", function () {
+            mergeModal.style.display = "none";
+        });
+
+        // Fetch branches and display them in the table
+        async function fetchBranches() {
+            try {
+                const response = await fetch('/api/branches');
+                const branches = await response.json();
+                populateBranchesTable(branches);
+            } catch (error) {
+                console.error('Error fetching branches:', error);
+            }
+        }
+
+        // Populate the branches table
+        function populateBranchesTable(branches) {
+            branchesTable.innerHTML = "";
+            branches.forEach(branch => {
+                const row = document.createElement("tr");
+
+                const nameCell = document.createElement("td");
+                const branchLink = document.createElement("a");
+                branchLink.href = `files.html?branchId=${branch.uniqueId}`; // Link to the second page with branchId
+                branchLink.textContent = branch.name;
+                nameCell.appendChild(branchLink);
+
+                row.appendChild(nameCell);
+                branchesTable.appendChild(row);
+            });
+        }
+
+        // Submit branch creation
+        submitBtn.addEventListener("click", async function () {
+            const branchName = branchNameInput.value;
+            if (!branchName) return;
+
+            try {
+                await fetch('/api/branches', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: branchName })
+                });
+
+                modal.style.display = "none";
+                fetchBranches(); // Refresh branches
+            } catch (error) {
+                console.error('Error creating branch:', error);
+            }
+        });
+
+        // Fetch branches for merge modal
+        async function fetchBranchesForMerge() {
+            try {
+                const response = await fetch('/api/branches');
+                const branches = await response.json();
+                populateBranchSelect(branches);
+            } catch (error) {
+                console.error('Error fetching branches:', error);
+            }
+        }
+
+        // Populate source and destination branch select dropdowns
+        function populateBranchSelect(branches) {
+            sourceBranchSelect.innerHTML = destinationBranchSelect.innerHTML = "";
+
+            branches.forEach(branch => {
+                const sourceOption = document.createElement("option");
+                const destinationOption = document.createElement("option");
+
+                sourceOption.value = branch.uniqueId;
+                sourceOption.textContent = branch.name;
+                sourceBranchSelect.appendChild(sourceOption);
+
+                destinationOption.value = branch.uniqueId;
+                destinationOption.textContent = branch.name;
+                destinationBranchSelect.appendChild(destinationOption);
+            });
+        }
+
+        // Handle branch merge submission
+        mergeSubmitBtn.addEventListener("click", async function () {
+            const sourceBranchId = sourceBranchSelect.value;
+            const destinationBranchId = destinationBranchSelect.value;
+
+            if (!sourceBranchId || !destinationBranchId) return;
+
+            try {
+                await fetch('/api/branches/merge', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sourceBranchId, destinationBranchId })
+                });
+
+                alert('Branches merged successfully');
+                mergeModal.style.display = "none";
+            } catch (error) {
+                console.error('Error merging branches:', error);
+            }
+        });
+    });
+</script>
+</body>
+</html>

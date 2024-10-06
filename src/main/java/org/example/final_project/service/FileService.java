@@ -100,6 +100,10 @@ public class FileService {
 //    public void deleteFile(Long id) {
 //        fileRepository.deleteById(id);
 //    }
+    public String getFileContent(Long fileId) {
+        File file = fileRepository.findById(fileId).get();
+        return file.getContent();
+    }
 
     private FileDTO toDTO(File file) {
         FileDTO fileDTO = new FileDTO();

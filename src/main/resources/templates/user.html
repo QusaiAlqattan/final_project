@@ -435,8 +435,14 @@
             files.forEach(file => {
                 const row = document.createElement("tr");
 
+                // const nameCell = document.createElement("td");
+                // nameCell.textContent = file.name;
+
                 const nameCell = document.createElement("td");
-                nameCell.textContent = file.name;
+                const fileLink = document.createElement("a");
+                fileLink.href = `/file/${file.uniqueId}`;  // Redirect to the file editor page
+                fileLink.textContent = file.name;
+                nameCell.appendChild(fileLink);
 
                 const containerCell = document.createElement("td");
                 containerCell.textContent = file.containerName ? file.containerName : "Root";

@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Files and Folders</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        table, th, td {
+            border: 1px solid black;
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+
+        .modal {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            width: 300px;
+            position: relative;
+        }
+
+        .close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+<h1>Files and Folders</h1>
+
+<button id="createFolderBtn">Create Folder</button>
+<button id="createFileBtn">Create File</button>
+
+<!-- Table for displaying files and folders -->
+<h2>Files and Folders</h2>
+<table id="filesTable">
+    <thead>
+    <tr>
+        <th>Name</th>
+    </tr>
+    </thead>
+    <tbody>
+    <!-- Dynamic rows for files and folders will be added here -->
+    </tbody>
+</table>
+
+<!-- Modal for creating folder -->
+<div id="folderModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <span class="close" id="closeFolderModal">&times;</span>
+        <h2>Create Folder</h2>
+        <label for="folderName">Folder Name:</label>
+        <input type="text" id="folderName" required>
+        <button id="submitFolderBtn">Submit</button>
+    </div>
+</div>
+
+<!-- Modal for creating file -->
+<div id="fileModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <span class="close" id="closeFileModal">&times;</span>
+        <h2>Create File</h2>
+        <label for="fileName">File Name:</label>
+        <input type="text" id="fileName" required>
+        <button id="submitFileBtn">Submit</button>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const createFolderBtn = document.getElementById("createFolderBtn");
+        const createFileBtn = document.getElementById("createFileBtn");
+        const folderModal = document.getElementById("folderModal");
+        const closeFolderModal = document.getElementById("closeFolderModal");
+        const submitFolderBtn = document.getElementById("submitFolderBtn");
+        const fileModal = document.getElementById("fileModal");
+        const closeFileModal = document.getElementById("closeFileModal");
+        const submitFileBtn = document.getElementById("submitFileBtn");
+        const filesTable = document.getElementById("filesTable").querySelector("tbody");
+        const folderNameInput = document.getElementById("folderName");
+        const fileNameInput = document.getElementById("fileName");
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const branchId = urlParams.get('branchId');
+
+        fetchFilesAndFolders();
+
+        // Open folder creation modal
+        createFolderBtn.addEventListener("click", function () {
+            folderModal.style.display = "flex";
+            folderNameInput.value = ""; // Clear input
+        });
+
+        // Close folder modal
+        closeFolderModal.addEventListener("click", function () {
+            folderModal.style.display = "none";
+        });
+
+        // Open file creation modal
+        createFileBtn.addEventListener("click", function () {
+            fileModal.style.display = "flex";
+            fileNameInput.value = ""; // Clear input
+        });
+
+        // Close file modal
+        closeFileModal.addEventListener("click", function () {
+            fileModal.style.display = "none";
+        });
+
+        // Fetch files and folders for the specific branch
+        async function fetchFilesAndFolders() {
+            try {
+                const response = await fetch(`/api/branches/${branchId}/files`);
+                const filesAndFolders = await response.json();
+                populateFilesTable(filesAndFolders);
+            } catch (error) {
+                console.error('Error fetching files and folders:', error);
+            }
+        }
+
+        // Populate the files and folders table
+        function populateFilesTable(items) {
+            filesTable.innerHTML = "";
+            items.forEach(item => {
+                const row = document.createElement("tr");
+                const nameCell = document.createElement("td");
+                nameCell.textContent = item.name;
+                row.appendChild(nameCell);
+                filesTable.appendChild(row);
+            });
+        }
+
+        // Submit folder creation
+        submitFolderBtn.addEventListener("click", async function () {
+            const folderName = folderNameInput.value;
+            if (!folderName) return;
+
+            try {
+                await fetch(`/api/branches/${branchId}/folders`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: folderName })
+                });
+
+                folderModal.style.display = "none";
+                fetchFilesAndFolders(); // Refresh files and folders
+            } catch (error) {
+                console.error('Error creating folder:', error);
+            }
+        });
+
+        // Submit file creation
+        submitFileBtn.addEventListener("click", async function () {
+            const fileName = fileNameInput.value;
+            if (!fileName) return;
+
+            try {
+                await fetch(`/api/branches/${branchId}/files`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: fileName })
+                });
+
+                fileModal.style.display = "none";
+                fetchFilesAndFolders(); // Refresh files and folders
+            } catch (error) {
+                console.error('Error creating file:', error);
+            }
+        });
+    });
+</script>
+</body>
+</html>
