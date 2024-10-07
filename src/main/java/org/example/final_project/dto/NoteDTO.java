@@ -4,6 +4,7 @@ public class NoteDTO {
 
     private Long uniqueId;
     private Long writerId;  // ID of the writer (SystemUser)
+    private String writerName;
     private Long fileId;    // ID of the associated file
     private String content;  // Content of the note
     private int rowNumber;   // Row number for the note
@@ -24,6 +25,14 @@ public class NoteDTO {
 
     public void setWriterId(Long writerId) {
         this.writerId = writerId;
+    }
+
+    public String getWriterName() {
+        return writerName;
+    }
+
+    public void setWriterName(String writerName) {
+        this.writerName = writerName;
     }
 
     public Long getFileId() {

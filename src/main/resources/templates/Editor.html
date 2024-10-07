@@ -1,26 +1,99 @@
-<!-- Add a Save button and handle its click event -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Collaborative Editor</title>
+    <style>
+        /* Simple styling for modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.4);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 400px;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        /* Styling for notes section */
+        .notes-section {
+            margin-top: 20px;
+            background-color: #f9f9f9;
+            padding: 15px;
+            border: 1px solid #ccc;
+            max-width: 800px;
+        }
+
+        .note {
+            margin-bottom: 10px;
+            padding: 10px;
+            border: 1px solid #ddd;
+        }
+
+        .note-header {
+            font-weight: bold;
+        }
+    </style>
+
     <script>
         document.addEventListener("DOMContentLoaded", function () {
             const fileId = window.location.pathname.split("/").pop(); // Extract fileId from URL
+            let userId = null; // You will need to get the actual user ID dynamically
+            let isLocked = false; // Track if this user holds the lock
+
             const socket = new WebSocket(`ws://localhost:8080/ws/file/${fileId}`);
 
+            // Fetch the current user's ID
+            fetch('/api/users/id')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch user ID');
+                    }
+                    return response.text();  // Assuming the response is plain text (the ID)
+                })
+                .then(id => {
+                    userId = id;  // Store the fetched user ID
+                    console.log("Current User ID:", userId);  // Optional: Log the user ID
+                })
+                .catch(error => {
+                    console.error('Error fetching user ID:', error);
+                });
+
             // Fetch the file content when the page loads
-            fetch(`/api/get/${fileId}`) // Adjust the endpoint as per your API design
+            fetch(`/api/get/${fileId}`)
                 .then(response => {
                     if (!response.ok) {
                         throw new Error('Error fetching file content');
                     }
-                    return response.text(); // Assume the response is plain text
+                    return response.text();
                 })
                 .then(content => {
-                    if (!document.getElementById("editor").value){
-                        document.getElementById("editor").value += content; // Set the textarea value
+                    if (!document.getElementById("editor").value) {
+                        document.getElementById("editor").value = content; // Set the textarea value
                     }
                 })
                 .catch(error => {
@@ -28,21 +101,61 @@
                     alert('Error fetching file content');
                 });
 
-            // Handle incoming messages
+            // Fetch and display notes for the file
+            function loadNotes() {
+                fetch(`/api/notes/${fileId}`)
+                    .then(response => response.json())
+                    .then(notes => {
+                        const notesSection = document.getElementById("notesSection");
+                        notesSection.innerHTML = '';  // Clear previous notes
+
+                        notes.forEach(note => {
+                            const noteElement = document.createElement("div");
+                            noteElement.classList.add("note");
+                            noteElement.innerHTML = `
+                            <div class="note-header">Line: ${note.rowNumber} | Written by: ${note.writerName}</div>
+                            <div class="note-content">${note.content}</div>
+                        `;
+                            notesSection.appendChild(noteElement);
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Error fetching notes:', error);
+                    });
+            }
+
+            // Call the function to load notes when the page loads
+            loadNotes();
+
+            // Handle WebSocket incoming messages (content updates & lock status)
             socket.onmessage = function (event) {
                 try {
-                    const data = JSON.parse(event.data);  // Parse the JSON data
+                    const data = JSON.parse(event.data);
 
-                    // Check if the content exists and update the editor
-                    if (data.content) {
-                        document.getElementById("editor").value = data.content;  // Populate the textarea
-                    } else {
-                        console.error('Content not found in received data');
+                    // Handle file content updates
+                    if (data.content && !isLocked) {
+                        document.getElementById("editor").value = data.content; // Populate the textarea
+                    }
+
+                    // Handle lock status updates
+                    if (data.lockStatus) {
+                        if (data.lockStatus === 'unlocked') {
+                            enableEditor();
+                        } else if (data.lockStatus !== userId) {
+                            disableEditor(`File is locked by ${data.lockStatus}`);
+                        }
                     }
                 } catch (error) {
                     console.error('Error parsing message:', error);
                 }
             };
+
+            // Lock the editor when user starts typing
+            document.getElementById("editor").addEventListener("focus", function () {
+                if (!isLocked) {
+                    acquireLock();
+                }
+            });
 
             // Send editor changes to the server in real-time
             document.getElementById("editor").addEventListener("input", function () {
@@ -53,36 +166,189 @@
             document.getElementById("saveButton").addEventListener("click", function () {
                 const content = document.getElementById("editor").value;
 
-                // Perform a POST request to save the content
                 fetch(`/api/save/${fileId}`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'text/plain'
-                    },
+                    headers: { 'Content-Type': 'text/plain' },
                     body: content
                 })
-                .then(response => {
-                    if (response.ok) {
-                        return response.text();  // Parse the response as plain text
-                    } else {
-                        throw new Error('Error saving file');
-                    }
-                })
-                .then(data => {
-                    alert(data);  // Show the plain text response (e.g., "File saved successfully!")
-                })
-                .catch(error => {
-                    console.error('Error saving file:', error);
-                    alert('Error saving file');
-                });
+                    .then(response => {
+                        if (response.ok) {
+                            return response.text(); // Parse the response as plain text
+                        } else {
+                            throw new Error('Error saving file');
+                        }
+                    })
+                    .then(data => {
+                        alert(data); // Show the plain text response (e.g., "File saved successfully!")
+                    })
+                    .catch(error => {
+                        console.error('Error saving file:', error);
+                        alert('Error saving file');
+                    });
             });
+
+            // Acquire lock for the file
+            function acquireLock() {
+                fetch(`/api/lock/acquire/${fileId}`, {
+                    method: 'POST'
+                })
+                    .then(response => {
+                        if (response.ok) {
+                            isLocked = true;
+                            enableEditor();
+                            socket.send(JSON.stringify({ lockStatus: 'locked', userId: userId }));
+                        } else {
+                            disableEditor('File is locked by another user');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error acquiring lock:', error);
+                    });
+            }
+
+            // Release lock when the user navigates away
+            window.addEventListener("beforeunload", function () {
+                releaseLock();
+            });
+
+            // Release lock for the file
+            function releaseLock() {
+                if (isLocked) {
+                    fetch(`/api/lock/release/${fileId}`, {
+                        method: 'POST'
+                    })
+                        .then(response => {
+                            if (response.ok) {
+                                isLocked = false;
+                                socket.send(JSON.stringify({ lockStatus: 'unlocked', userId: userId }));
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error releasing lock:', error);
+                        });
+                }
+            }
+
+            // Periodically check if the file is locked (for robustness)
+            setInterval(checkLockStatus, 5000);
+
+            // Check lock status from server
+            function checkLockStatus() {
+                fetch(`/api/lock/status/${fileId}`)
+                    .then(response => response.text())
+                    .then(lockStatus => {
+                        if (lockStatus === "File is not locked") {
+                            enableEditor();
+                            isLocked = false;
+                        } else if (lockStatus !== userId) {
+                            disableEditor(`File is locked by ${lockStatus}`);
+                            isLocked = true;
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error checking lock status:', error);
+                    });
+            }
+
+            // Disable the editor and show a lock message
+            function disableEditor(message) {
+                document.getElementById("editor").disabled = true;
+                document.getElementById("lockMessage").innerText = message;
+            }
+
+            // Enable the editor and hide the lock message
+            function enableEditor() {
+                document.getElementById("editor").disabled = false;
+                document.getElementById("lockMessage").innerText = '';
+            }
+
+            // Modal logic for adding notes
+            const modal = document.getElementById("noteModal");
+            const addNoteButton = document.getElementById("addNoteButton");
+            const closeModal = document.getElementsByClassName("close")[0];
+            const submitNoteButton = document.getElementById("submitNoteButton");
+
+            // Open the modal when "Add Note" button is clicked
+            addNoteButton.onclick = function () {
+                modal.style.display = "block";
+            };
+
+            // Close the modal when the 'x' is clicked
+            closeModal.onclick = function () {
+                modal.style.display = "none";
+            };
+
+            // Close the modal if the user clicks outside of it
+            window.onclick = function (event) {
+                if (event.target === modal) {
+                    modal.style.display = "none";
+                }
+            };
+
+            // Handle submitting the note
+            submitNoteButton.onclick = function () {
+                const rowNumber = document.getElementById("rowNumber").value;
+                const noteContent = document.getElementById("noteContent").value;
+
+                if (rowNumber && noteContent) {
+                    const noteData = { rowNumber: rowNumber, content: noteContent };
+
+                    fetch(`/api/note/add/${fileId}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(noteData)
+                    })
+                        .then(response => {
+                            if (response.ok) {
+                                alert('Note added successfully!');
+                                modal.style.display = "none";
+                                loadNotes(); // Reload notes after successfully adding a note
+                            } else {
+                                throw new Error('Error adding note');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error adding note:', error);
+                            alert('Error adding note');
+                        });
+                } else {
+                    alert('Please fill out all fields');
+                }
+            };
         });
     </script>
+
 </head>
 <body>
 <h1>Collaborative Editor</h1>
 <textarea id="editor" rows="20" cols="100"></textarea>
+
+<p id="lockMessage" style="color: red;"></p> <!-- Message to show lock status -->
+
 <!-- Add Save Button -->
 <button id="saveButton">Save</button>
+
+<!-- Add Note Button -->
+<button id="addNoteButton">Add Note</button>
+
+<!-- Modal for adding a note -->
+<div id="noteModal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>Add Note</h2>
+        <label for="rowNumber">Line Number:</label>
+        <input type="number" id="rowNumber" min="1"><br><br>
+        <label for="noteContent">Note Content:</label><br>
+        <textarea id="noteContent" rows="4" cols="50"></textarea><br><br>
+        <button id="submitNoteButton">Submit Note</button>
+    </div>
+</div>
+
+<!-- Notes Section -->
+<h2>Notes</h2>
+<div id="notesSection" class="notes-section">
+    <!-- Notes will be dynamically loaded here -->
+</div>
+
 </body>
 </html>

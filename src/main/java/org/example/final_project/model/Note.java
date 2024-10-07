@@ -1,5 +1,6 @@
 package org.example.final_project.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 
 @Entity
@@ -11,16 +12,18 @@ public class Note {
 
     @ManyToOne
     @JoinColumn(name = "writer_id")
+    @JsonBackReference
     private SystemUser writer;
 
     @ManyToOne
     @JoinColumn(name = "file_id")
+    @JsonBackReference
     private File file;
 
     @Lob
     private String content;
 
-    @Column(nullable = false)
+    @Column(nullable = false, name = "row_num")
     private int rowNumber;
 
     public void setUniqueId(Long uniqueId) {
