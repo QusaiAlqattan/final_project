@@ -28,6 +28,8 @@ public class LockService {
     // Check if a file is locked
     public String getLockHolder(Long fileId) {
         System.out.println("33333333333333333333333333");
+        System.out.println(fileId);
+        System.out.println(fileLocks.get(fileId));
         return fileLocks.get(fileId);
     }
 }
