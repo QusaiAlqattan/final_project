@@ -28,14 +28,14 @@ public class RESTFolderController {
         this.folderService = folderService;
     }
 
-    @GetMapping()
-    public ResponseEntity<List<FolderDTO>> fetchFolders() {
-        return ResponseEntity.ok(folderService.getAllFolders());
+    @GetMapping("{branchId}")
+    public ResponseEntity<List<FolderDTO>> fetchFolders(@PathVariable Long branchId) {
+        return ResponseEntity.ok(folderService.getFolders(branchId));
     }
 
-    @PostMapping()
-    public ResponseEntity<FolderDTO> createFolder(@RequestBody FolderDTO folderDTO) {
-        folderService.saveFolder(folderDTO);
+    @PostMapping("{branchId}")
+    public ResponseEntity<FolderDTO> createFolder(@RequestBody FolderDTO folderDTO, @PathVariable Long branchId) {
+        folderService.saveFolder(folderDTO, branchId);
         return ResponseEntity.status(HttpStatus.CREATED).body(folderDTO);
     }
 }

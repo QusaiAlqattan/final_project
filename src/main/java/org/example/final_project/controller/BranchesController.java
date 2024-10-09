@@ -4,11 +4,11 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 @Controller
-@RequestMapping("/user")
-public class UserController {
+@RequestMapping("/branches")
+public class BranchesController {
 
     @GetMapping()
     public String user_home() {
-        return "user"; // Return the home view
+        return "branches"; // Return the home view
     }
 }

@@ -24,8 +24,8 @@ public class FolderService {
     }
 
     // Retrieve all filtered Folders
-    public List<FolderDTO> getAllFolders() {
-        List<Folder> folders = folderRepository.findAll();
+    public List<FolderDTO> getFolders(Long branchId) {
+        List<Folder> folders = folderRepository.findByBranch_UniqueId(branchId);
         List<FolderDTO> filteredFolders = new ArrayList<>();
         for (Folder folder : folders) {
             filteredFolders.add(toDTO(folder));
@@ -34,21 +34,19 @@ public class FolderService {
     }
 
     // Save a new folder
-    public void saveFolder(FolderDTO folderDTO) {
+    public void saveFolder(FolderDTO folderDTO, Long branchId) {
         Folder folder = new Folder();
         folder.setName(folderDTO.getName());
 
         // Set branch if provided
-        if (folderDTO.getBranchId() != null && branchRepository.findById(folderDTO.getBranchId()).isPresent()) {
-            Branch branch = branchRepository.findById(folderDTO.getBranchId()).get();
-            folder.setBranch(branch);
+        Branch branch = branchRepository.findById(branchId).get();
+        folder.setBranch(branch);
 
-            // update branch
-            List<Folder> branchFolders = branch.getFolders();
-            branchFolders.add(folder);
-            branch.setFolders(branchFolders);
-            branchRepository.save(branch);
-        }
+        // update branch
+        List<Folder> branchFolders = branch.getFolders();
+        branchFolders.add(folder);
+        branch.setFolders(branchFolders);
+        branchRepository.save(branch);
 
         // Set parent folder if provided (for nested folders)
         if (folderDTO.getContainerId() != null && folderRepository.findById(folderDTO.getContainerId()).isPresent()) {

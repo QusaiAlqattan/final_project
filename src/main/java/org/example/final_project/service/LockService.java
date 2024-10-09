@@ -19,6 +19,7 @@ public class LockService {
         System.out.println("2222222222222222222222222");
         String currentHolder = fileLocks.get(fileId);
         if (currentHolder != null && currentHolder.equals(userId)) {
+            System.out.println("888888888888888888888888");
             fileLocks.remove(fileId);
             return true;
         }

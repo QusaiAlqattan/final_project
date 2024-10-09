@@ -1,7 +1,6 @@
 package org.example.final_project.service;
 
 import org.example.final_project.dto.FileDTO;
-import org.example.final_project.dto.FolderDTO;
 import org.example.final_project.model.Branch;
 import org.example.final_project.model.File;
 import org.example.final_project.model.Folder;
@@ -30,8 +29,8 @@ public class FileService {
     }
 
     // Retrieve all filtered Files
-    public List<FileDTO> getAllFiles() {
-        List<File> files = fileRepository.findAll();
+    public List<FileDTO> getFiles(Long branchId) {
+        List<File> files = fileRepository.findByBranch_UniqueId(branchId);
         List<FileDTO> filteredFiles = new ArrayList<>();
         for (File file : files) {
             filteredFiles.add(toDTO(file));
@@ -39,13 +38,23 @@ public class FileService {
         return filteredFiles;
     }
 
-    public void createFile(FileDTO fileDto) {
+    public void createFile(FileDTO fileDto, Long branchId) {
         File file = new File();
         file.setName(fileDto.getName());
 
         file.setContent(fileDto.getContent());
 
-        file.setVersion("1"); // Default version
+        List<File> branchFiles = fileRepository.findByBranch_UniqueId(branchId);
+        Boolean duplicate = false;
+        for (File branchFile : branchFiles) {
+            if (branchFile.getName().equals(fileDto.getName())) {
+                duplicate = true;
+                file.setVersion(String.valueOf(Long.parseLong(branchFile.getVersion()) + 1));
+            }
+        }
+        if (!duplicate) {
+            file.setVersion("1"); // Default version
+        }
 
         file.setTimestamp(LocalDateTime.now());
 
@@ -62,16 +71,14 @@ public class FileService {
         }
 
         // Set branch if provided
-        if (fileDto.getBranchId() != null && branchRepository.findById(fileDto.getBranchId()).isPresent()) {
-            Branch branch = branchRepository.findById(fileDto.getBranchId()).get();
-            file.setBranch(branch);
+        Branch branch = branchRepository.findById(branchId).get();
+        file.setBranch(branch);
 
-            // update branch
-            List<File> branchFiles = branch.getFiles();
-            branchFiles.add(file);
-            branch.setFiles(branchFiles);
-            branchRepository.save(branch);
-        }
+        // update branch
+        List<File> oldBranchFiles = branch.getFiles();
+        oldBranchFiles.add(file);
+        branch.setFiles(oldBranchFiles);
+        branchRepository.save(branch);
 
         //TODO: set creator, after managing sessions & oauth
 

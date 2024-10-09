@@ -35,14 +35,14 @@ public class RESTFileController {
         this.fileService = fileService;
     }
 
-    @GetMapping
-    public ResponseEntity<List<FileDTO>> getAllFiles() {
-        return ResponseEntity.ok(fileService.getAllFiles());
+    @GetMapping("{branchId}")
+    public ResponseEntity<List<FileDTO>> getAllFiles(@PathVariable Long branchId) {
+        return ResponseEntity.ok(fileService.getFiles(branchId));
     }
 
-    @PostMapping
-    public ResponseEntity<FileDTO> createFile(@RequestBody FileDTO fileDTO) {
-        fileService.createFile(fileDTO);
+    @PostMapping("{branchId}")
+    public ResponseEntity<FileDTO> createFile(@RequestBody FileDTO fileDTO, @PathVariable Long branchId) {
+        fileService.createFile(fileDTO, branchId);
         return ResponseEntity.status(HttpStatus.CREATED).body(fileDTO);
     }
 }

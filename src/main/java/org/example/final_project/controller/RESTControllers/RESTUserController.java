@@ -11,6 +11,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api/users") // Base URL for the controller
@@ -31,12 +33,17 @@ public class RESTUserController {
     }
 
     @GetMapping("/id")
-    public String getUserId() {
+    public ResponseEntity<Map<String, String>> getUserIdAndUsername() {
         System.out.println("77777777777777777777777777777777");
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String username = auth.getName();
         String id = String.valueOf(systemUserRepository.findByUsername(username).getUniqueId());
-        return id;
+
+        // Create a response map
+        Map<String, String> response = new HashMap<>();
+        response.put("userId", id);
+        response.put("userName", username);
+        return ResponseEntity.ok(response);
     }
 
 

@@ -4,42 +4,163 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login</title>
-    <link rel="stylesheet" href="/custom/css/login.css"> <!-- Link to your CSS file -->
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            width: 300px;
+            text-align: center;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .login-form {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+
+        label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        input[type="text"],
+        input[type="password"] {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: 100%;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus,
+        input[type="password"]:focus {
+            border-color: #007bff;
+        }
+
+        .btn {
+            background-color: #007bff;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .btn:hover {
+            background-color: #0056b3;
+        }
+
+        .register-link {
+            margin-top: 10px;
+        }
+
+        .register-link a {
+            color: #007bff;
+            text-decoration: none;
+        }
+
+        .register-link a:hover {
+            text-decoration: underline;
+        }
+
+        .message {
+            margin-top: 15px;
+            font-size: 14px;
+        }
+
+        .error-message {
+            color: #ff4d4d;
+        }
+
+        .logout-message {
+            color: #28a745;
+        }
+
+        .oauth {
+            margin-top: 20px;
+        }
+
+        .github-btn {
+            background-color: #333;
+            color: white;
+            display: inline-block;
+            padding: 10px;
+            border-radius: 4px;
+            text-decoration: none;
+            transition: background-color 0.3s;
+        }
+
+        .github-btn:hover {
+            background-color: #444;
+        }
+
+    </style>
 </head>
 <body>
-<h1>Login</h1>
+<div class="container">
+    <h1>Login</h1>
 
-<!-- Standard form login -->
-<form action="/login" method="post">
-    <div>
-        <label for="username">Username:</label>
-        <input type="text" id="username" name="username" required>
+    <!-- Standard form login -->
+    <form action="/login" method="post" class="login-form">
+        <div class="input-group">
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" required>
+        </div>
+        <div class="input-group">
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" required>
+        </div>
+        <button type="submit" class="btn">Login</button>
+    </form>
+
+    <div class="register-link">
+        <p>Don't have an account? <a href="/register">Register here</a></p>
     </div>
-    <div>
-        <label for="password">Password:</label>
-        <input type="password" id="password" name="password" required>
+
+    <!-- Error or logout message handling -->
+    <div class="message">
+        <p th:if="${param.error}" class="error-message">Invalid username or password.</p>
+        <p th:if="${param.logout}" class="logout-message">You have been logged out.</p>
     </div>
-    <button type="submit">Login</button>
-</form>
 
-<a href="/register">register here</a>
+    <!-- GitHub Login button -->
+    <div class="oauth">
+        <p>Or login using:</p>
+        <a href="/oauth2/authorization/github" class="github-btn">
 
-<!-- Error or logout message handling -->
-<div>
-    <p th:if="${param.error}">Invalid username or password.</p>
-    <p th:if="${param.logout}">You have been logged out.</p>
+            <i class="fa-brands fa-github" style="color: #000000;"></i>
+<!--            <img src="https://raw.githubusercontent.com/logos/master/logo.png" width="20">-->
+            GitHub
+        </a>
+    </div>
 </div>
-
-<!-- GitHub Login button -->
-<div>
-    <p>Or login using:</p>
-    <a href="/oauth2/authorization/github">
-        <button type="button" class="github-btn">
-            <img src="static/images/github-logo.png" alt="GitHub Logo" width="20">
-            Login with GitHub
-        </button>
-    </a>
-</div>
-
 </body>
 </html>

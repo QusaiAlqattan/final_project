@@ -61,6 +61,8 @@ public class BranchService {
         // Save the new branch first to generate its ID
         branch = branchRepository.save(branch);  // Save the branch to persist it and get its ID
 
+        System.out.println();
+
         // If the branch has a parent branch
         if (branchDTO.getParentBranchId() != null) {
             // Find the parent branch
@@ -275,7 +277,7 @@ public class BranchService {
         File newFile = new File();
         newFile.setName(newName);
         newFile.setContent(sourceFile.getContent());
-        newFile.setVersion("conflict");
+        newFile.setVersion("1");
 
         Branch destinationBranch = destinationFile.getBranch();
         newFile.setBranch(destinationBranch);
@@ -426,6 +428,7 @@ public class BranchService {
                 File destFile = destFileOpt.get();
                 File conflictFile = handleFileConflict(sourceFile, destFile); // Handle file conflict if needed
                 conflictFile.setContainer(destinationFolder);
+                conflictFile.setTimestamp(LocalDateTime.now());
 
 //                newFiles.add(conflictFile);
                 fileRepository.save(conflictFile);
