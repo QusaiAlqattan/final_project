@@ -175,6 +175,7 @@
     <thead>
     <tr>
         <th>Branch Name</th>
+        <th>Timestamp</th>
     </tr>
     </thead>
     <tbody id="branchesTableBody">
@@ -307,7 +308,12 @@
             branchLink.textContent = branch.name;
             nameCell.appendChild(branchLink);
 
+            const timestampCell = document.createElement("td");
+            timestampCell.textContent = branch.timestamp ? branch.timestamp : "N/A";
+
             row.appendChild(nameCell);
+            row.appendChild(timestampCell);
+
             branchesTableBody.appendChild(row);
         });
     }
