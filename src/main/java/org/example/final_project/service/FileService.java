@@ -4,10 +4,14 @@ import org.example.final_project.dto.FileDTO;
 import org.example.final_project.model.Branch;
 import org.example.final_project.model.File;
 import org.example.final_project.model.Folder;
+import org.example.final_project.model.SystemUser;
 import org.example.final_project.repository.BranchRepository;
 import org.example.final_project.repository.FileRepository;
 import org.example.final_project.repository.FolderRepository;
+import org.example.final_project.repository.SystemUserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -20,12 +24,14 @@ public class FileService {
     private final FileRepository fileRepository;
     private final FolderRepository folderRepository;
     private final BranchRepository branchRepository;
+    private final SystemUserRepository systemUserRepository;
 
     @Autowired
-    public FileService(FileRepository fileRepository, FolderRepository folderRepository, BranchRepository branchRepository) {
+    public FileService(FileRepository fileRepository, FolderRepository folderRepository, BranchRepository branchRepository, SystemUserRepository systemUserRepository) {
         this.fileRepository = fileRepository;
         this.folderRepository = folderRepository;
         this.branchRepository = branchRepository;
+        this.systemUserRepository = systemUserRepository;
     }
 
     // Retrieve all filtered Files
@@ -80,7 +86,9 @@ public class FileService {
         branch.setFiles(oldBranchFiles);
         branchRepository.save(branch);
 
-        //TODO: set creator, after managing sessions & oauth
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        SystemUser user = systemUserRepository.findByUsername(auth.getName());
+        file.setCreator(user);
 
         fileRepository.save(file);
 

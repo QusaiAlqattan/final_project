@@ -9,7 +9,10 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -87,6 +90,9 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
 
     @Autowired
+    private SystemUserDetailService systemUserDetailService;
+
+    @Autowired
     private CustomOAuth2UserService customOAuth2UserService;
 
     @Autowired
@@ -126,17 +132,27 @@ public class SecurityConfig {
         return http.build();
     }
 
+//    @Bean
+//    public UserDetailsService userDetailsService(SystemUserRepository systemUserRepository) {
+//        return new SystemUserDetailService(systemUserRepository);
+//    }
+
     @Bean
-    public UserDetailsService userDetailsService(SystemUserRepository systemUserRepository) {
-        return new SystemUserDetailService(systemUserRepository);
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
+        return authenticationConfiguration.getAuthenticationManager();
     }
 
     @Bean
-    public AuthenticationManager authManager(HttpSecurity http) throws Exception {
-        AuthenticationManagerBuilder authenticationManagerBuilder =
-                http.getSharedObject(AuthenticationManagerBuilder.class);
-        authenticationManagerBuilder.userDetailsService(userDetailsService(null));
-        return authenticationManagerBuilder.build();
+    public AuthenticationProvider authenticationProviders() {
+        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
+        authProvider.setUserDetailsService(userDetailsService());
+        authProvider.setPasswordEncoder(passwordEncoder());
+        return authProvider;
+    }
+
+    @Bean public UserDetailsService userDetailsService()
+    {
+        return systemUserDetailService;
     }
 
 //    @Bean

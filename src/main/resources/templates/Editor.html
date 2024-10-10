@@ -5,171 +5,105 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Collaborative Editor</title>
     <style>
-        /* Global Styles */
-        body {
-            font-family: 'Arial', sans-serif;
-            background-color: #f0f0f0; /* Light background for better contrast */
-            margin: 0;
-            padding: 20px;
-            color: #333; /* Dark text for readability */
-        }
-
-        h1 {
-            text-align: center;
-            color: #4a90e2; /* Primary color for headings */
-            margin-bottom: 20px;
-        }
-
-        h2 {
-            color: #333;
-            border-bottom: 2px solid #4a90e2; /* Underlined heading */
-            padding-bottom: 5px;
-        }
-
-        /* Editor Styles */
-        #editor {
-            width: 100%;
-            max-width: 800px; /* Maximum width for the editor */
-            height: 300px; /* Fixed height for textarea */
-            margin: 0 auto; /* Center the textarea */
-            padding: 10px; /* Padding inside the textarea */
-            font-size: 16px; /* Larger text for better readability */
-            border: 1px solid #ccc; /* Light border */
-            border-radius: 5px; /* Rounded corners */
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Subtle shadow */
-            transition: border-color 0.3s; /* Smooth transition for border color */
-        }
-
-        #editor:focus {
-            border-color: #4a90e2; /* Highlight border on focus */
-            outline: none; /* Remove default outline */
-        }
-
-        /* Button Styles */
-        button {
-            background-color: #4a90e2; /* Primary button color */
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            margin: 5px 10px;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s, transform 0.2s; /* Transition effects */
-        }
-
-        button:hover {
-            background-color: #357ab8; /* Darker shade on hover */
-            transform: scale(1.05); /* Slight zoom effect */
-        }
-
-        /* Modal Styles */
+        /* Simple styling for modal */
         .modal {
-            display: none; /* Hidden by default */
-            position: fixed; /* Stay in place */
-            z-index: 100; /* Sit on top */
+            display: none;
+            position: fixed;
+            z-index: 1;
             left: 0;
             top: 0;
-            width: 100%; /* Full width */
-            height: 100%; /* Full height */
-            background-color: rgba(0, 0, 0, 0.5); /* Dark background with opacity */
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.4);
         }
 
         .modal-content {
-            background-color: #fff; /* White background */
-            margin: 15% auto; /* Centered */
-            padding: 20px; /* Padding */
-            border-radius: 8px; /* Rounded corners */
-            width: 400px; /* Fixed width */
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Shadow effect */
+            background-color: white;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 400px;
         }
 
         .close {
-            color: #aaa; /* Light gray */
-            float: right; /* Float to the right */
-            font-size: 28px; /* Font size */
-            font-weight: bold; /* Bold font */
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
         }
 
         .close:hover,
         .close:focus {
-            color: #000; /* Change color on hover */
-            text-decoration: none; /* No underline */
-            cursor: pointer; /* Pointer cursor */
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
         }
 
-        /* Notes Section */
+        /* Styling for notes section */
         .notes-section {
-            margin-top: 20px; /* Margin above */
-            background-color: #ffffff; /* White background */
-            padding: 15px; /* Padding */
-            border: 1px solid #ccc; /* Light border */
-            border-radius: 5px; /* Rounded corners */
-            max-width: 800px; /* Max width */
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+            margin-top: 20px;
+            background-color: #f9f9f9;
+            padding: 15px;
+            border: 1px solid #ccc;
+            max-width: 800px;
         }
 
         .note {
-            margin-bottom: 10px; /* Space below notes */
-            padding: 10px; /* Padding */
-            border: 1px solid #ddd; /* Light border */
-            border-radius: 5px; /* Rounded corners */
-            background-color: #f9f9f9; /* Light background for notes */
+            margin-bottom: 10px;
+            padding: 10px;
+            border: 1px solid #ddd;
         }
 
         .note-header {
-            font-weight: bold; /* Bold header */
-            color: #4a90e2; /* Color for note header */
-        }
-
-        /* Lock Message Styles */
-        #lockMessage {
-            color: red; /* Red color for lock status */
-            font-weight: bold; /* Bold text */
-            text-align: center; /* Centered text */
+            font-weight: bold;
         }
     </style>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+        const editor = document.getElementById("editor");
+        const runButton = document.getElementById("run-btn");
+        const outputElement = document.getElementById("output");
+        const languageSelect = document.getElementById("language");
+
+        runButton.addEventListener('click', function() {
+            const code = editor.value;  // Get the code from the editor
+            const language = languageSelect.value;  // Get the selected language
+
+            // Send the code and language to the server
+            fetch('/run-code', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ code, language })  // Include the selected language
+            })
+                .then(response => response.json())
+                .then(data => {
+                    outputElement.textContent = data.output;  // Display the output
+                })
+                .catch(error => {
+                    outputElement.textContent = `Error: ${error.message}`;
+                });
+        });
+    });
+    </script>
+
     <script>
         document.addEventListener("DOMContentLoaded", function () {
             const fileId = window.location.pathname.split("/").pop(); // Extract fileId from URL
-            let userId = null; // You will need to get the actual user ID dynamically
-            let userName = null;
-            let isLocked = false; // Track if this user holds the lock
-            let typingTimer; // Timer identifier
-            const doneTypingInterval = 1000; // Time in ms (5 seconds)
-
             const socket = new WebSocket(`ws://localhost:8080/ws/file/${fileId}`);
 
-            // Sending a GET request to the '/api/users' URL
-            fetch('/api/users/id')
-                .then(response => {
-                    // Check if the response is OK (status code 200-299)
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    // Convert the response to JSON
-                    return response.json();
-                })
-                .then(data => {
-                    // Handle the JSON data here
-                    userId = data.id;
-                    userName = data.userName;
-                    console.log('userName', userName);
-                })
-                .catch(error => {
-                    // Handle any errors
-                    console.error('There was a problem with the fetch operation:', error);
-                });
-
             // Fetch the file content when the page loads
-            fetch(`/api/get/${fileId}`)
+            fetch(`/api/get/${fileId}`) // Adjust the endpoint as per your API design
                 .then(response => {
                     if (!response.ok) {
                         throw new Error('Error fetching file content');
                     }
-                    return response.text();
+                    return response.text(); // Assume the response is plain text
                 })
                 .then(content => {
-                    if (!document.getElementById("editor").value) {
+                    if (!document.getElementById("editor").value){
                         document.getElementById("editor").value = content; // Set the textarea value
                     }
                 })
@@ -190,9 +124,9 @@
                             const noteElement = document.createElement("div");
                             noteElement.classList.add("note");
                             noteElement.innerHTML = `
-                            <div class="note-header">Line: ${note.rowNumber} | Written by: ${note.writerName}</div>
-                            <div class="note-content">${note.content}</div>
-                        `;
+                                <div class="note-header">Line: ${note.rowNumber} | Written by: ${note.username}</div>
+                                <div class="note-content">${note.content}</div>
+                            `;
                             notesSection.appendChild(noteElement);
                         });
                     })
@@ -204,154 +138,54 @@
             // Call the function to load notes when the page loads
             loadNotes();
 
-            // Handle WebSocket incoming messages (content updates & lock status)
+            // Handle incoming messages
             socket.onmessage = function (event) {
                 try {
-                    const data = JSON.parse(event.data);
+                    const data = JSON.parse(event.data);  // Parse the JSON data
 
-                    // Handle file content updates
-                    if (data.content && !isLocked) {
-                        document.getElementById("editor").value = data.content; // Populate the textarea
-                    }
-
-                    // Handle lock status updates
-                    if (data.lockStatus) {
-                        if (data.lockStatus === 'unlocked') {
-                            enableEditor();
-                        } else if (data.lockStatus !== userId) {
-                            disableEditor(`File is locked by ${data.userName}`);
-                        }
+                    // Check if the content exists and update the editor
+                    if (data.content) {
+                        document.getElementById("editor").value = data.content;  // Populate the textarea
+                    } else {
+                        console.error('Content not found in received data');
                     }
                 } catch (error) {
                     console.error('Error parsing message:', error);
                 }
             };
 
-            // Lock the editor when user starts typing
-            document.getElementById("editor").addEventListener("focus", function () {
-                console.log('focus')
-                if (!isLocked) {
-                    acquireLock();
-
-                    clearTimeout(typingTimer);
-                    // Set a new timer
-                    console.log('before')
-                    typingTimer = setTimeout(releaseLock, doneTypingInterval);
-                }
-            });
-
             // Send editor changes to the server in real-time
             document.getElementById("editor").addEventListener("input", function () {
                 socket.send(JSON.stringify({ content: this.value }));
-
-                // Clear the timer on every keystroke
-                clearTimeout(typingTimer);
-                // Set a new timer
-                console.log('before')
-                typingTimer = setTimeout(releaseLock, doneTypingInterval);
-
             });
 
             // Save the file when the save button is clicked
             document.getElementById("saveButton").addEventListener("click", function () {
                 const content = document.getElementById("editor").value;
 
+                // Perform a POST request to save the content
                 fetch(`/api/save/${fileId}`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'text/plain' },
+                    headers: {
+                        'Content-Type': 'text/plain'
+                    },
                     body: content
                 })
                     .then(response => {
                         if (response.ok) {
-                            return response.text(); // Parse the response as plain text
+                            return response.text();  // Parse the response as plain text
                         } else {
                             throw new Error('Error saving file');
                         }
                     })
                     .then(data => {
-                        alert(data); // Show the plain text response (e.g., "File saved successfully!")
+                        alert(data);  // Show the plain text response (e.g., "File saved successfully!")
                     })
                     .catch(error => {
                         console.error('Error saving file:', error);
                         alert('Error saving file');
                     });
             });
-
-            // Acquire lock for the file
-            function acquireLock() {
-                fetch(`/api/lock/acquire/${fileId}`, {
-                    method: 'POST'
-                })
-                    .then(response => {
-                        if (response.ok) {
-                            isLocked = true;
-                            enableEditor();
-                            socket.send(JSON.stringify({ lockStatus: 'locked', userId: userId, userName: userName}));
-                        } else {
-                            disableEditor('File is locked by another user');
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error acquiring lock:', error);
-                    });
-            }
-
-            // Release lock when the user navigates away
-            window.addEventListener("beforeunload", function () {
-                releaseLock();
-            });
-
-            // Release lock for the file
-            function releaseLock() {
-                if (isLocked) {
-                    fetch(`/api/lock/release/${fileId}`, {
-                        method: 'POST'
-                    })
-                        .then(response => {
-                            if (response.ok) {
-                                isLocked = false;
-                                document.getElementById("editor").blur();
-                                socket.send(JSON.stringify({ lockStatus: 'unlocked', userId: userId }));
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Error releasing lock:', error);
-                        });
-                }
-            }
-
-            // Periodically check if the file is locked (for robustness)
-            setInterval(checkLockStatus, 5000);
-
-            // Check lock status from server
-            function checkLockStatus() {
-                fetch(`/api/lock/status/${fileId}`)
-                    .then(response => response.text())
-                    .then(lockStatus => {
-                        if (lockStatus === "File is not locked") {
-                            enableEditor();
-                            isLocked = false;
-                        } else if (lockStatus !== userName) {
-                            disableEditor(`File is locked by ${lockStatus}`);
-                            isLocked = true;
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error checking lock status:', error);
-                    });
-            }
-
-            // Disable the editor and show a lock message
-            function disableEditor(message) {
-                document.getElementById("editor").disabled = true;
-                document.getElementById("lockMessage").innerText = message;
-            }
-
-            // Enable the editor and hide the lock message
-            function enableEditor() {
-                document.getElementById("editor").disabled = false;
-                document.getElementById("lockMessage").innerText = '';
-            }
 
             // Modal logic for adding notes
             const modal = document.getElementById("noteModal");
@@ -360,33 +194,38 @@
             const submitNoteButton = document.getElementById("submitNoteButton");
 
             // Open the modal when "Add Note" button is clicked
-            addNoteButton.onclick = function () {
+            addNoteButton.onclick = function() {
                 modal.style.display = "block";
             };
 
             // Close the modal when the 'x' is clicked
-            closeModal.onclick = function () {
+            closeModal.onclick = function() {
                 modal.style.display = "none";
             };
 
             // Close the modal if the user clicks outside of it
-            window.onclick = function (event) {
+            window.onclick = function(event) {
                 if (event.target === modal) {
                     modal.style.display = "none";
                 }
             };
 
             // Handle submitting the note
-            submitNoteButton.onclick = function () {
+            submitNoteButton.onclick = function() {
                 const rowNumber = document.getElementById("rowNumber").value;
                 const noteContent = document.getElementById("noteContent").value;
 
                 if (rowNumber && noteContent) {
-                    const noteData = { rowNumber: rowNumber, content: noteContent };
+                    const noteData = {
+                        rowNumber: rowNumber,
+                        content: noteContent
+                    };
 
                     fetch(`/api/note/add/${fileId}`, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
                         body: JSON.stringify(noteData)
                     })
                         .then(response => {
@@ -411,15 +250,23 @@
 </head>
 <body>
 <h1>Collaborative Editor</h1>
+
+
 <textarea id="editor" rows="20" cols="100"></textarea>
-
-<p id="lockMessage" style="color: red;"></p> <!-- Message to show lock status -->
-
 <!-- Add Save Button -->
 <button id="saveButton">Save</button>
 
+<select id="language">
+    <option value="java">Java</option>
+    <option value="javascript">JavaScript</option>
+    <option value="python">Python</option>
+</select>
+<button id="run-btn">Run</button>
+
 <!-- Add Note Button -->
 <button id="addNoteButton">Add Note</button>
+
+<pre id="output"></pre> <!-- Output display area -->
 
 <!-- Modal for adding a note -->
 <div id="noteModal" class="modal">

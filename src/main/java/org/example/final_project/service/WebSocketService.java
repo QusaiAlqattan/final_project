@@ -3,10 +3,14 @@ package org.example.final_project.service;
 import org.example.final_project.model.Branch;
 import org.example.final_project.model.File;
 import org.example.final_project.model.Folder;
+import org.example.final_project.model.SystemUser;
 import org.example.final_project.repository.BranchRepository;
 import org.example.final_project.repository.FileRepository;
 import org.example.final_project.repository.FolderRepository;
+import org.example.final_project.repository.SystemUserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.socket.*;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
@@ -27,6 +31,9 @@ public class WebSocketService extends TextWebSocketHandler {
 
     @Autowired
     private BranchRepository branchRepository;
+
+    @Autowired
+    private SystemUserRepository systemUserRepository;
 
     // Store file content in memory (could be in a database or in-memory cache)
     private ConcurrentHashMap<String, String> fileContents = new ConcurrentHashMap<>();
@@ -64,7 +71,17 @@ public class WebSocketService extends TextWebSocketHandler {
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
         String fileId = extractFileId(session); // Extract the file ID from the URL
-        fileSessions.getOrDefault(fileId, new CopyOnWriteArrayList<>()).remove(session);
+        CopyOnWriteArrayList<WebSocketSession> sessions = fileSessions.get(fileId);
+
+        if (sessions != null) {
+            sessions.remove(session);
+
+            // If no more sessions are left, clear unsaved changes
+            if (sessions.isEmpty()) {
+                fileSessions.remove(fileId); // Optionally remove the entry for the fileId
+                fileContents.remove(fileId);  // Remove unsaved changes for the file
+            }
+        }
     }
 
     public String createNewFile(String fileId, String content) {
@@ -80,7 +97,9 @@ public class WebSocketService extends TextWebSocketHandler {
             newFile.setTimestamp(LocalDateTime.now());
             newFile.setName(file.getName());
 
-            //TODO add creator
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            SystemUser user = systemUserRepository.findByUsername(auth.getName());
+            newFile.setCreator(user);
 
             fileRepository.save(newFile);
 

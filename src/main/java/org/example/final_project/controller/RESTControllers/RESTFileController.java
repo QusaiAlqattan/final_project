@@ -1,8 +1,6 @@
 package org.example.final_project.controller.RESTControllers;
 
 import org.example.final_project.dto.FileDTO;
-import org.example.final_project.dto.FolderDTO;
-import org.example.final_project.model.File;
 import org.example.final_project.repository.FileRepository;
 import org.example.final_project.repository.BranchRepository;
 import org.example.final_project.repository.FolderRepository;
@@ -12,7 +10,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -36,7 +33,7 @@ public class RESTFileController {
     }
 
     @GetMapping("{branchId}")
-    public ResponseEntity<List<FileDTO>> getAllFiles(@PathVariable Long branchId) {
+    public ResponseEntity<List<FileDTO>> getFiles(@PathVariable Long branchId) {
         return ResponseEntity.ok(fileService.getFiles(branchId));
     }
 
