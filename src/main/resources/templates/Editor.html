@@ -94,68 +94,70 @@
         document.addEventListener("DOMContentLoaded", function () {
             const fileId = window.location.pathname.split("/").pop(); // Extract fileId from URL
             const socket = new WebSocket(`ws://localhost:8080/ws/file/${fileId}`);
+            const editor = document.getElementById("editor");
+            let oldContent = '';
 
-            let editor = document.getElementById("editor");
-            let lock_message = document.getElementById('lock-message');
-            let isEditing = false;  // To track if the user is currently editing
-            let lockTimeout;       // Timer for lock expiration
-
-            function unlock() {
-                editor.readOnly = false; // Set the textarea to editable
-                editor.blur();
-                lock_message.style.display = 'none'; // Hide the lock message
-            }
-
-            function lock() {
-                editor.readOnly = true; // Set the textarea to read-only
-                lock_message.style.display = 'block'; // Show the lock message
-            }
+            // let editor = document.getElementById("editor");
+            // let lock_message = document.getElementById('lock-message');
+            // let isEditing = false;  // To track if the user is currently editing
+            // let lockTimeout;       // Timer for lock expiration
+            //
+            // function unlock() {
+            //     editor.readOnly = false; // Set the textarea to editable
+            //     editor.blur();
+            //     lock_message.style.display = 'none'; // Hide the lock message
+            // }
+            //
+            // function lock() {
+            //     editor.readOnly = true; // Set the textarea to read-only
+            //     lock_message.style.display = 'block'; // Show the lock message
+            // }
 
             // Reset the lock timer
-            function resetLockTimer() {
-                clearTimeout(lockTimeout);
-                lockTimeout = setTimeout(() => {
-                    releaseLock();
-                }, 5000); // 5 seconds
-            }
+            // function resetLockTimer() {
+            //     clearTimeout(lockTimeout);
+            //     lockTimeout = setTimeout(() => {
+            //         releaseLock();
+            //     }, 5000); // 5 seconds
+            // }
 
             // Acquire lock when user wants to edit
-            function acquireLock() {
-                fetch(`/api/lock/acquire/${fileId}`, {
-                    method: 'POST',
-                    body: JSON.stringify({ fileId: fileId }),
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.locked) {
-                            isEditing = true;
-                            // document.getElementById('editor').readOnly = false;
-                            resetLockTimer();
-                        } else {
-                            // Notify user they can't edit
-                            alert("Someone else is editing. Please wait.");
-                            lock();
-                        }
-                    });
-            }
+            // function acquireLock() {
+            //     fetch(`/api/lock/acquire/${fileId}`, {
+            //         method: 'POST',
+            //         body: JSON.stringify({ fileId: fileId }),
+            //         headers: {
+            //             'Content-Type': 'application/json'
+            //         }
+            //     })
+            //         .then(response => response.json())
+            //         .then(data => {
+            //             if (data.locked) {
+            //                 isEditing = true;
+            //                 // document.getElementById('editor').readOnly = false;
+            //                 resetLockTimer();
+            //             } else {
+            //                 // Notify user they can't edit
+            //                 alert("Someone else is editing. Please wait.");
+            //                 lock();
+            //             }
+            //         });
+            // }
 
             // Release the lock
-            function releaseLock() {
-                fetch(`/api/lock/release/${fileId}`, {
-                    method: 'POST',
-                    body: JSON.stringify({ fileId: fileId }),
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                });
-
-                // Reset the editing state
-                isEditing = false;
-                // document.getElementById('editor').readOnly = true;
-            }
+            // function releaseLock() {
+            //     fetch(`/api/lock/release/${fileId}`, {
+            //         method: 'POST',
+            //         body: JSON.stringify({ fileId: fileId }),
+            //         headers: {
+            //             'Content-Type': 'application/json'
+            //         }
+            //     });
+            //
+            //     // Reset the editing state
+            //     isEditing = false;
+            //     // document.getElementById('editor').readOnly = true;
+            // }
 
             // Fetch the file content when the page loads
             fetch(`/api/get/${fileId}`) // Adjust the endpoint as per your API design
@@ -166,8 +168,9 @@
                     return response.text(); // Assume the response is plain text
                 })
                 .then(content => {
-                    if (!document.getElementById("editor").value){
-                        document.getElementById("editor").value = content; // Set the textarea value
+                    if (!editor.value){
+                        editor.value = content; // Set the textarea value
+                        oldContent = content;
                     }
                 })
                 .catch(error => {
@@ -204,23 +207,23 @@
             // Handle incoming messages
             socket.onmessage = function (event) {
                 try {
-                    console.log('hi')
                     const data = JSON.parse(event.data);  // Parse the JSON data
-                    console.log(data)
                     // Check if the content exists and update the editor
-                    if (data.content || data.type) {
+                    if (data.content.length >= 0) {
                         // console.log('data.content', data.content)
-                        console.log('data.type', data.type)
-                        if (data.type === 'LOCK') {
-                            console.log('lock');
-                            lock();
-                        } else if (data.type === 'UNLOCK') {
-                            console.log('UNLOCK');
-                            unlock();
-                        }else{
-                            document.getElementById("editor").value = data.content;  // Populate the textarea
-                        }
+                        // if (data.type === 'LOCK') {
+                        //     console.log('lock');
+                        //     lock();
+                        // } else if (data.type === 'UNLOCK') {
+                        //     console.log('UNLOCK');
+                        //     unlock();
+                        // }else{
+                        //     document.getElementById("editor").value = data.content;  // Populate the textarea
+                        // }
+                        editor.value = data.content;  // Populate the textarea
+                        oldContent = data.content;
                     } else {
+                        console.log(data.content)
                         console.error('Content not found in received data');
                     }
                 } catch (error) {
@@ -228,13 +231,59 @@
                 }
             };
 
-            document.getElementById('editor').addEventListener('focus', acquireLock);
+            // document.getElementById('editor').addEventListener('focus', acquireLock);
 
             // Send editor changes to the server in real-time
             document.getElementById("editor").addEventListener("input", function () {
-                resetLockTimer();
-                socket.send(JSON.stringify({ content: this.value }));
+                // resetLockTimer();
+                let startPosition =  editor.selectionStart;
+                let newData = this.value;
+                let type = 'Delete';
+                let value = findExtraSubstring(newData, oldContent);
+                let offset = value.length;
+
+                if (newData.length > oldContent.length){
+                    type = 'Insert';
+                    startPosition = startPosition - offset;
+                }
+
+                console.log('startPosition', startPosition)
+                console.log('value', value)
+                console.log('type', type)
+                console.log('offset', offset)
+
+                socket.send(JSON.stringify({
+                    content: value,
+                    type: type,
+                    offset: offset,
+                    position: startPosition
+                }));
             });
+
+            function findExtraSubstring(str1, str2) {
+                // Determine which string is longer
+                let longer = str1.length > str2.length ? str1 : str2;
+                let shorter = str1.length <= str2.length ? str1 : str2;
+
+                let index1 = 0; // Pointer for shorter string
+                let index2 = 0; // Pointer for longer string
+                let extraChars = ''; // Store extra characters
+
+                // Iterate through both strings
+                while (index2 < longer.length) {
+                    if (index1 < shorter.length && longer[index2] === shorter[index1]) {
+                        // If characters match, move to the next character in both strings
+                        index1++;
+                    } else {
+                        // If characters don't match, it's part of the extra substring
+                        extraChars += longer[index2];
+                    }
+                    // Move to the next character in the longer string
+                    index2++;
+                }
+
+                return extraChars;
+            }
 
             // Save the file when the save button is clicked
             document.getElementById("saveButton").addEventListener("click", function () {

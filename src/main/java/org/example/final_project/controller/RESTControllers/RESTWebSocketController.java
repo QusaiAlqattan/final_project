@@ -65,18 +65,18 @@ public class RESTWebSocketController {
         }
     }
 
-    @PostMapping("/lock/acquire/{fileId}")
-    public ResponseEntity<Map<String, Boolean>> acquireLock(@PathVariable String fileId) {
-        Map<String, Boolean> response = new HashMap<>();
-        Boolean locked = webSocketService.acquireLock(fileId);
-        response.put("locked", locked);
-        return ResponseEntity.ok(response);
-    }
+//    @PostMapping("/lock/acquire/{fileId}")
+//    public ResponseEntity<Map<String, Boolean>> acquireLock(@PathVariable String fileId) {
+//        Map<String, Boolean> response = new HashMap<>();
+//        Boolean locked = webSocketService.acquireLock(fileId);
+//        response.put("locked", locked);
+//        return ResponseEntity.ok(response);
+//    }
 
-    @PostMapping("/lock/release/{fileId}")
-    public ResponseEntity<Void> releaseLock(@PathVariable String fileId) {
-        webSocketService.releaseLock(fileId);
-        return ResponseEntity.noContent().build();
-    }
+//    @PostMapping("/lock/release/{fileId}")
+//    public ResponseEntity<Void> releaseLock(@PathVariable String fileId) {
+//        webSocketService.releaseLock(fileId);
+//        return ResponseEntity.noContent().build();
+//    }
 
 }
