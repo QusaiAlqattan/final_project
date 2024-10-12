@@ -59,6 +59,7 @@
         }
     </style>
 
+    <!-- run code script -->
     <script>
         document.addEventListener("DOMContentLoaded", function () {
         const editor = document.getElementById("editor");
@@ -93,6 +94,68 @@
         document.addEventListener("DOMContentLoaded", function () {
             const fileId = window.location.pathname.split("/").pop(); // Extract fileId from URL
             const socket = new WebSocket(`ws://localhost:8080/ws/file/${fileId}`);
+
+            let editor = document.getElementById("editor");
+            let lock_message = document.getElementById('lock-message');
+            let isEditing = false;  // To track if the user is currently editing
+            let lockTimeout;       // Timer for lock expiration
+
+            function unlock() {
+                editor.readOnly = false; // Set the textarea to editable
+                editor.blur();
+                lock_message.style.display = 'none'; // Hide the lock message
+            }
+
+            function lock() {
+                editor.readOnly = true; // Set the textarea to read-only
+                lock_message.style.display = 'block'; // Show the lock message
+            }
+
+            // Reset the lock timer
+            function resetLockTimer() {
+                clearTimeout(lockTimeout);
+                lockTimeout = setTimeout(() => {
+                    releaseLock();
+                }, 5000); // 5 seconds
+            }
+
+            // Acquire lock when user wants to edit
+            function acquireLock() {
+                fetch(`/api/lock/acquire/${fileId}`, {
+                    method: 'POST',
+                    body: JSON.stringify({ fileId: fileId }),
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.locked) {
+                            isEditing = true;
+                            // document.getElementById('editor').readOnly = false;
+                            resetLockTimer();
+                        } else {
+                            // Notify user they can't edit
+                            alert("Someone else is editing. Please wait.");
+                            lock();
+                        }
+                    });
+            }
+
+            // Release the lock
+            function releaseLock() {
+                fetch(`/api/lock/release/${fileId}`, {
+                    method: 'POST',
+                    body: JSON.stringify({ fileId: fileId }),
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                // Reset the editing state
+                isEditing = false;
+                // document.getElementById('editor').readOnly = true;
+            }
 
             // Fetch the file content when the page loads
             fetch(`/api/get/${fileId}`) // Adjust the endpoint as per your API design
@@ -141,11 +204,22 @@
             // Handle incoming messages
             socket.onmessage = function (event) {
                 try {
+                    console.log('hi')
                     const data = JSON.parse(event.data);  // Parse the JSON data
-
+                    console.log(data)
                     // Check if the content exists and update the editor
-                    if (data.content) {
-                        document.getElementById("editor").value = data.content;  // Populate the textarea
+                    if (data.content || data.type) {
+                        // console.log('data.content', data.content)
+                        console.log('data.type', data.type)
+                        if (data.type === 'LOCK') {
+                            console.log('lock');
+                            lock();
+                        } else if (data.type === 'UNLOCK') {
+                            console.log('UNLOCK');
+                            unlock();
+                        }else{
+                            document.getElementById("editor").value = data.content;  // Populate the textarea
+                        }
                     } else {
                         console.error('Content not found in received data');
                     }
@@ -154,8 +228,11 @@
                 }
             };
 
+            document.getElementById('editor').addEventListener('focus', acquireLock);
+
             // Send editor changes to the server in real-time
             document.getElementById("editor").addEventListener("input", function () {
+                resetLockTimer();
                 socket.send(JSON.stringify({ content: this.value }));
             });
 
@@ -253,6 +330,11 @@
 
 
 <textarea id="editor" rows="20" cols="100"></textarea>
+
+<div id="lock-message" style="display: none;">
+    The text area is currently locked by another user.
+</div>
+
 <!-- Add Save Button -->
 <button id="saveButton">Save</button>
 

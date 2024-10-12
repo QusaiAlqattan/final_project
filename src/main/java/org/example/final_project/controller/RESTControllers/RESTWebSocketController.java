@@ -1,4 +1,4 @@
-package org.example.final_project.controller;
+package org.example.final_project.controller.RESTControllers;
 
 import org.example.final_project.model.File;
 import org.example.final_project.repository.FileRepository;
@@ -7,9 +7,14 @@ import org.example.final_project.service.WebSocketService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.example.final_project.repository.RoleRepository;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @Controller
 @RequestMapping("/api")
@@ -60,5 +65,18 @@ public class RESTWebSocketController {
         }
     }
 
+    @PostMapping("/lock/acquire/{fileId}")
+    public ResponseEntity<Map<String, Boolean>> acquireLock(@PathVariable String fileId) {
+        Map<String, Boolean> response = new HashMap<>();
+        Boolean locked = webSocketService.acquireLock(fileId);
+        response.put("locked", locked);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/lock/release/{fileId}")
+    public ResponseEntity<Void> releaseLock(@PathVariable String fileId) {
+        webSocketService.releaseLock(fileId);
+        return ResponseEntity.noContent().build();
+    }
 
 }

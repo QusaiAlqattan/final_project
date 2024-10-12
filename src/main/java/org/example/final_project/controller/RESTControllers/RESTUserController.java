@@ -34,7 +34,6 @@ public class RESTUserController {
 
     @GetMapping("/id")
     public ResponseEntity<Map<String, String>> getUserIdAndUsername() {
-        System.out.println("77777777777777777777777777777777");
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String username = auth.getName();
         String id = String.valueOf(systemUserRepository.findByUsername(username).getUniqueId());
