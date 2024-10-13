@@ -16,11 +16,11 @@ public class Branch {
     @Column(nullable = false)
     private String name;
 
-    @OneToMany(mappedBy = "branch")
+    @OneToMany(mappedBy = "branch", cascade = CascadeType.REMOVE)
     @JsonManagedReference // Tells Jackson to manage the serialization of subFolders
     private List<Folder> folders;
 
-    @OneToMany(mappedBy = "branch")
+    @OneToMany(mappedBy = "branch", cascade = CascadeType.REMOVE)
     @JsonManagedReference // Tells Jackson to manage the serialization of subFolders
     private List<File> files;
 

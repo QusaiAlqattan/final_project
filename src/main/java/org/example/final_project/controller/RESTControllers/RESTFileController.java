@@ -42,4 +42,11 @@ public class RESTFileController {
         fileService.createFile(fileDTO, branchId);
         return ResponseEntity.status(HttpStatus.CREATED).body(fileDTO);
     }
+
+    @DeleteMapping("/{fileId}")
+    public ResponseEntity<Void> deleteFile(@PathVariable Long fileId) {
+        fileService.deleteFileById(fileId);  // Make sure to implement this in the service
+        return ResponseEntity.noContent().build();
+    }
+
 }

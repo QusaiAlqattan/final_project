@@ -119,6 +119,7 @@
     <tr>
         <th>Name</th>
         <th>Container</th>
+        <th>Actions</th> <!-- New Actions column -->
     </tr>
     </thead>
     <tbody>
@@ -135,6 +136,7 @@
         <th>Container</th>
         <th>Version</th>
         <th>Timestamp</th>
+        <th>Actions</th> <!-- New Actions column -->
     </tr>
     </thead>
     <tbody>
@@ -277,13 +279,38 @@
                 const timestampCell = document.createElement("td");
                 timestampCell.textContent = file.timestamp ? file.timestamp : "N/A";
 
+                // Create delete button cell
+                const actionCell = document.createElement("td");
+                const deleteButton = document.createElement("button");
+                deleteButton.textContent = "Delete";
+                deleteButton.style.backgroundColor = "red"; // Set button color to red for delete
+                deleteButton.style.color = "white";         // White text color
+                deleteButton.addEventListener("click", () => deleteFile(file.uniqueId)); // Attach event handler
+                actionCell.appendChild(deleteButton);
+
                 row.appendChild(nameCell);
                 row.appendChild(containerCell);
                 row.appendChild(versionCell);
                 row.appendChild(timestampCell);
+                row.appendChild(actionCell);
 
                 filesTable.appendChild(row);
             });
+        }
+
+        // Function to delete a file
+        async function deleteFile(fileId) {
+            const confirmed = confirm("Are you sure you want to delete this file?");
+            if (!confirmed) return;
+
+            try {
+                await fetch(`/api/files/${fileId}`, {
+                    method: 'DELETE'
+                });
+                fetchFiles(); // Refresh the files table after deletion
+            } catch (error) {
+                console.error('Error deleting file:', error);
+            }
         }
 
         // Populate the files and folders table
@@ -305,8 +332,28 @@
                 const containerCell = document.createElement("td");
                 containerCell.textContent = folder.containerName ? folder.containerName : "Root";
 
+                // Create the delete button
+                const actionsCell = document.createElement("td");
+                const deleteBtn = document.createElement("button");
+                deleteBtn.textContent = "Delete";
+                deleteBtn.style.backgroundColor = "#e74c3c";  // Red color for delete button
+                deleteBtn.style.color = "white";
+                deleteBtn.style.border = "none";
+                deleteBtn.style.padding = "5px 10px";
+                deleteBtn.style.cursor = "pointer";
+
+                // Add event listener for folder deletion
+                deleteBtn.addEventListener("click", function () {
+                    if (confirm(`Are you sure you want to delete the folder "${folder.name}"?`)) {
+                        deleteFolderById(folder.uniqueId);
+                    }
+                });
+
+                actionsCell.appendChild(deleteBtn);
+
                 row.appendChild(nameCell);
                 row.appendChild(containerCell);
+                row.appendChild(actionsCell);
 
                 foldersTable.appendChild(row);
 
@@ -317,6 +364,25 @@
                 folderContainerSelect.appendChild(option);
                 fileContainerSelect.appendChild(option.cloneNode(true)); // Clone the option for file modal
             });
+        }
+
+        // Function to delete a folder by ID
+        async function deleteFolderById(folderId) {
+            try {
+                const response = await fetch(`/api/folders/${folderId}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    alert("Folder deleted successfully");
+                    fetchFolders();  // Refresh the folder list
+                    fetchFiles(); // Refresh the files table after deletion
+                } else {
+                    alert("Error deleting folder. Please try again.");
+                }
+            } catch (error) {
+                console.error('Error deleting folder:', error);
+            }
         }
 
 

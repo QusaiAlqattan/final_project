@@ -38,4 +38,10 @@ public class RESTFolderController {
         folderService.saveFolder(folderDTO, branchId);
         return ResponseEntity.status(HttpStatus.CREATED).body(folderDTO);
     }
+
+    @DeleteMapping("/{folderId}")
+    public ResponseEntity<Void> deleteFolder(@PathVariable Long folderId) {
+        folderService.deleteFolderById(folderId);
+        return ResponseEntity.noContent().build();  // 204 No Content
+    }
 }

@@ -144,7 +144,6 @@
 
         <label for="parentBranch">Parent Branch:</label>
         <select id="parentBranch">
-            <option value="">None</option>
             <!-- Parent branches will be populated here -->
         </select>
 
@@ -222,9 +221,16 @@
             const branches = await response.json();
             const parentBranchSelect = document.getElementById("parentBranch");
 
+            parentBranchSelect.innerText = "";
+
+            let option = document.createElement("option");
+            option.value = ""; // Use uniqueId as the value
+            option.textContent = "None"; // Use branch name as display text
+            parentBranchSelect.appendChild(option);
+
             // Populate the parent branch dropdown
             branches.forEach(branch => {
-                const option = document.createElement("option");
+                option = document.createElement("option");
                 option.value = branch.uniqueId; // Use uniqueId as the value
                 option.textContent = branch.name; // Use branch name as display text
                 parentBranchSelect.appendChild(option);
@@ -258,6 +264,7 @@
             if (response.ok) {
                 alert('Branch created successfully!');
                 fetchBranches(); // Refresh the branch list
+                fetchParentBranches();
                 closeCreateBranchModal(); // Close the modal
             } else {
                 alert('Failed to create branch.');
@@ -345,6 +352,8 @@
         sourceBranchSelect.innerHTML = ""; // Clear existing options
         targetBranchSelect.innerHTML = ""; // Clear existing options
 
+        console.log('targetBranchSelect', targetBranchSelect)
+
         branches.forEach(branch => {
             const sourceOption = document.createElement("option");
             sourceOption.value = branch.uniqueId;
@@ -373,6 +382,7 @@
             if (response.ok) {
                 alert('Branch deleted successfully!');
                 fetchBranches(); // Refresh the branch list after deletion
+                fetchParentBranches();
             } else {
                 alert('Failed to delete branch.');
             }

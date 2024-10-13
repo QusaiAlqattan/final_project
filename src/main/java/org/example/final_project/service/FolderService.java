@@ -7,9 +7,11 @@ import org.example.final_project.repository.BranchRepository;
 import org.example.final_project.repository.FolderRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class FolderService {
@@ -76,5 +78,16 @@ public class FolderService {
             folderDTO.setContainerName(folder.getContainer().getName());
         }
         return folderDTO;
+    }
+
+    // Method to delete folder by ID
+    @Transactional
+    public void deleteFolderById(Long folderId) {
+        Optional<Folder> folder = folderRepository.findById(folderId);
+        if (folder.isPresent()) {
+            folderRepository.deleteById(folderId);
+        } else {
+            throw new RuntimeException("Folder not found with id: " + folderId);
+        }
     }
 }

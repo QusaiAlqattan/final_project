@@ -13,10 +13,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class FileService {
@@ -93,6 +95,16 @@ public class FileService {
 
         fileRepository.save(file);
 
+    }
+
+    @Transactional
+    public void deleteFileById(Long fileId) {
+        Optional<File> file = fileRepository.findById(fileId);
+        if (file.isPresent()) {
+            fileRepository.deleteById(fileId);
+        } else {
+            throw new RuntimeException("File not found with id: " + fileId);
+        }
     }
 
 //    public File getFileById(Long id) {

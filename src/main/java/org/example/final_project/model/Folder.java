@@ -24,11 +24,11 @@ public class Folder {
     @JsonBackReference // Prevents infinite recursion when serializing
     private Folder container;
 
-    @OneToMany(mappedBy = "container")
+    @OneToMany(mappedBy = "container", cascade = CascadeType.REMOVE)
     @JsonManagedReference // Tells Jackson to manage the serialization of subFolders
     private List<Folder> subFolders;
 
-    @OneToMany(mappedBy = "container")
+    @OneToMany(mappedBy = "container", cascade = CascadeType.REMOVE)
     @JsonManagedReference // Tells Jackson to manage the serialization of subFolders
     private List<File> files;
 
