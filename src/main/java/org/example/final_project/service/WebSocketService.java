@@ -45,8 +45,6 @@ public class WebSocketService extends TextWebSocketHandler {
 
     private int offset = 0;
 
-    private boolean isFollowed = false;
-
     private int prevPosition = 0;
 
     // Store file content in memory (could be in a database or in-memory cache)
@@ -125,47 +123,50 @@ public class WebSocketService extends TextWebSocketHandler {
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
         lock.lock();
-        System.out.println("handleTextMessage");
+        try {
+            System.out.println("handleTextMessage");
 
-        String fileId = extractFileId(session); // Extract the file ID from the URL
-        String payload = message.getPayload();  // The content of the file (from client)
+            String fileId = extractFileId(session); // Extract the file ID from the URL
 
-        System.out.println("fileSessions" + fileSessions);
-
-
-        // Store the latest file content
-        if (fileContents.containsKey(fileId)) {
-            // first time writing on file
-            fileContents.put(fileId, updateContent(message, fileContents.get(fileId)));
-        }else{
-            fileContents.put(fileId, updateContent(message, ""));
-        }
-
-
-        // Check if there are any waiting threads
-        if (!lock.hasQueuedThreads()) {
-            offset = 0;
-        }
-
-        TextMessage newMessage = new TextMessage("{\"content\":\""+ fileContents.get(fileId) +"\"}");
-        // Broadcast the changes to all other clients connected to the same file
-        for (WebSocketSession s : fileSessions.getOrDefault(fileId, new CopyOnWriteArrayList<>())) {
-            if (s.isOpen()) {
-                s.sendMessage(newMessage);  // Send updated content to other clients
+            // Store the latest file content
+            if (fileContents.containsKey(fileId)) {
+                fileContents.put(fileId, updateContent(message, fileContents.get(fileId)));
+            } else {
+                fileContents.put(fileId, updateContent(message, ""));
             }
+
+            TextMessage newMessage = new TextMessage("{\"content\":\"" + fileContents.get(fileId) + "\"}");
+
+            // Broadcast the changes to all other clients connected to the same file
+            for (WebSocketSession s : fileSessions.getOrDefault(fileId, new CopyOnWriteArrayList<>())) {
+                if (s.isOpen()) {
+                    s.sendMessage(newMessage);  // Send updated content to other clients
+                }
+            }
+
+            // Check if there are any waiting threads
+            System.out.println("before: " + fileContents.get(fileId));
+            if (!lock.hasQueuedThreads()) {
+                System.out.println("lock has queued");
+                System.out.println("offset: " + offset);
+                offset = 0;
+            }
+            System.out.println("after: " + fileContents.get(fileId));
+        } finally {
+            lock.unlock();  // Always unlock, even if an exception occurs
         }
-        lock.unlock();
     }
 
     private String updateContent(TextMessage message, String originalContent){
         int position = 0;
-        int actualPosition;
+        int actualPosition = 0;
+        String value = "default";
         try {
             ObjectMapper objectMapper = new ObjectMapper();
             // Parse the JSON string into a JsonNode
             HashMap<String, Object> map = objectMapper.readValue(message.getPayload(), new TypeReference<HashMap<String, Object>>() {});
             int tempOffset = (Integer) map.get("offset");
-            String value = (String) map.get("content");
+            value = (String) map.get("content");
             String type = (String) map.get("type");
             position = (Integer) map.get("position");
             actualPosition = position + offset;
@@ -175,41 +176,55 @@ public class WebSocketService extends TextWebSocketHandler {
             if (type.equals("Insert")) {
                 if (offset != 0){
                     // someone edited the file before me
-                    if (actualPosition > prevPosition){
+                    if (actualPosition >= prevPosition){
                         // i do care about the offset
                         stringBuilder.insert(actualPosition, value);
+                        prevPosition = actualPosition;
                     }else{
                         // dont care about the offset
                         stringBuilder.insert(position, value);
+                        prevPosition = position;
                     }
                 }else{
                     // offset is 0 (someone cut & replace same size)
                     stringBuilder.insert(position, value);
+                    prevPosition = position;
                 }
                 offset += tempOffset;
-                prevPosition = position + offset;
                 return stringBuilder.toString();
             }else{
-                // in delete offset can't be != 0
-                if (actualPosition > prevPosition){
-                    // i do care about the offset
-                    String output = removeSubstring(originalContent, actualPosition, tempOffset);
-                    offset -= tempOffset;
-                    prevPosition = position + offset;
-                    return output;
-                }else{
+                if (offset != 0) {
+                    if (actualPosition >= prevPosition) {
+                        // i do care about the offset
+                        String output = removeSubstring(originalContent, actualPosition, tempOffset);
+                        offset -= tempOffset;
+                        prevPosition = actualPosition;
+                        return output;
+                    } else {
+                        // dont care about the offset
+                        String output = removeSubstring(originalContent, position, tempOffset);
+                        offset -= tempOffset;
+                        prevPosition = position;
+                        return output;
+                    }
+                }else {
                     // dont care about the offset
                     String output = removeSubstring(originalContent, position, tempOffset);
                     offset -= tempOffset;
-                    prevPosition = position + offset;
+                    prevPosition = position;
                     return output;
                 }
             }
 
         } catch (Exception e) {
+            System.out.println("offset: " + offset);
+            System.out.println("actual position: " + actualPosition);
+            System.out.println("content: " + originalContent);
+            System.out.println("position: " + position);
+            System.out.println("value: " + value);
             e.printStackTrace();
         }
-        return "";
+        return "oops!!!";
     }
 
     private String removeSubstring(String original, int startIndex, int length) {
