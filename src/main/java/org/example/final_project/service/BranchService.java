@@ -450,4 +450,14 @@ public class BranchService {
 //        }
     }
     //  !   ///////////////////////////////////////////////////////////////
+
+    public void deleteBranch(Long branchId) {
+        // Check if branch exists, throw exception if not
+        Branch branch = branchRepository.findById(branchId)
+                .orElseThrow(() -> new RuntimeException("Branch not found"));
+
+        // Delete the branch
+        branchRepository.delete(branch);
+    }
+
 }

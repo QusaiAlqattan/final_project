@@ -97,68 +97,6 @@
             const editor = document.getElementById("editor");
             let oldContent = '';
 
-            // let editor = document.getElementById("editor");
-            // let lock_message = document.getElementById('lock-message');
-            // let isEditing = false;  // To track if the user is currently editing
-            // let lockTimeout;       // Timer for lock expiration
-            //
-            // function unlock() {
-            //     editor.readOnly = false; // Set the textarea to editable
-            //     editor.blur();
-            //     lock_message.style.display = 'none'; // Hide the lock message
-            // }
-            //
-            // function lock() {
-            //     editor.readOnly = true; // Set the textarea to read-only
-            //     lock_message.style.display = 'block'; // Show the lock message
-            // }
-
-            // Reset the lock timer
-            // function resetLockTimer() {
-            //     clearTimeout(lockTimeout);
-            //     lockTimeout = setTimeout(() => {
-            //         releaseLock();
-            //     }, 5000); // 5 seconds
-            // }
-
-            // Acquire lock when user wants to edit
-            // function acquireLock() {
-            //     fetch(`/api/lock/acquire/${fileId}`, {
-            //         method: 'POST',
-            //         body: JSON.stringify({ fileId: fileId }),
-            //         headers: {
-            //             'Content-Type': 'application/json'
-            //         }
-            //     })
-            //         .then(response => response.json())
-            //         .then(data => {
-            //             if (data.locked) {
-            //                 isEditing = true;
-            //                 // document.getElementById('editor').readOnly = false;
-            //                 resetLockTimer();
-            //             } else {
-            //                 // Notify user they can't edit
-            //                 alert("Someone else is editing. Please wait.");
-            //                 lock();
-            //             }
-            //         });
-            // }
-
-            // Release the lock
-            // function releaseLock() {
-            //     fetch(`/api/lock/release/${fileId}`, {
-            //         method: 'POST',
-            //         body: JSON.stringify({ fileId: fileId }),
-            //         headers: {
-            //             'Content-Type': 'application/json'
-            //         }
-            //     });
-            //
-            //     // Reset the editing state
-            //     isEditing = false;
-            //     // document.getElementById('editor').readOnly = true;
-            // }
-
             // Fetch the file content when the page loads
             fetch(`/api/get/${fileId}`) // Adjust the endpoint as per your API design
                 .then(response => {
@@ -207,23 +145,13 @@
             // Handle incoming messages
             socket.onmessage = function (event) {
                 try {
-                    const data = JSON.parse(event.data);  // Parse the JSON data
+                    // const dataJson = event.data;  // Parse the JSON data
+                    let data = event.data;
                     // Check if the content exists and update the editor
-                    if (data.content.length >= 0) {
-                        // console.log('data.content', data.content)
-                        // if (data.type === 'LOCK') {
-                        //     console.log('lock');
-                        //     lock();
-                        // } else if (data.type === 'UNLOCK') {
-                        //     console.log('UNLOCK');
-                        //     unlock();
-                        // }else{
-                        //     document.getElementById("editor").value = data.content;  // Populate the textarea
-                        // }
-                        editor.value = data.content;  // Populate the textarea
-                        oldContent = data.content;
+                    if (data.length >= 0) {
+                        editor.value = data;  // Populate the textarea
+                        oldContent = data;
                     } else {
-                        console.log(data.content)
                         console.error('Content not found in received data');
                     }
                 } catch (error) {
@@ -231,13 +159,12 @@
                 }
             };
 
-            // document.getElementById('editor').addEventListener('focus', acquireLock);
-
             // Send editor changes to the server in real-time
             document.getElementById("editor").addEventListener("input", function () {
                 // resetLockTimer();
                 let startPosition =  editor.selectionStart;
-                let newData = this.value;
+                let endPosition =  editor.selectionEnd;
+                let newData = editor.value;
                 let type = 'Delete';
                 let value = findExtraSubstring(newData, oldContent);
                 let offset = value.length;
@@ -248,6 +175,7 @@
                 }
 
                 console.log('startPosition', startPosition)
+                console.log('endPosition', endPosition)
                 console.log('value', value)
                 console.log('type', type)
                 console.log('offset', offset)
@@ -260,29 +188,61 @@
                 }));
             });
 
-            function findExtraSubstring(str1, str2) {
+            function findExtraSubstring(str1, str2, startPosition, endPosition) {
                 // Determine which string is longer
                 let longer = str1.length > str2.length ? str1 : str2;
                 let shorter = str1.length <= str2.length ? str1 : str2;
+                let delta = longer.length - shorter.length;
 
-                let index1 = 0; // Pointer for shorter string
-                let index2 = 0; // Pointer for longer string
-                let extraChars = ''; // Store extra characters
+                let diffSubstring = "";
+                let differenceFound = false;
 
-                // Iterate through both strings
-                while (index2 < longer.length) {
-                    if (index1 < shorter.length && longer[index2] === shorter[index1]) {
-                        // If characters match, move to the next character in both strings
-                        index1++;
-                    } else {
-                        // If characters don't match, it's part of the extra substring
-                        extraChars += longer[index2];
+                for (let i = 0; i < longer.length; i++) {
+                    // Compare each character of str1 with str2
+                    if (longer[i] !== shorter[i]) {
+                        // Once a difference is found, extract a 6-character substring from str1
+                        diffSubstring = longer.substring(i, i + delta);
+                        differenceFound = true;
+                        break;  // Exit the loop after finding the first difference
                     }
-                    // Move to the next character in the longer string
-                    index2++;
                 }
 
-                return extraChars;
+                if (!differenceFound && longer.length > shorter.length) {
+                    // If no difference was found in the characters, it means the extra part is at the end
+                    diffSubstring = longer.substring(shorter.length, shorter.length + delta);
+                }
+                return diffSubstring
+                //
+                // let index1Right = shorter.length - 1; // Start from the last character of the shorter string
+                // let index2Right = longer.length - 1;  // Start from the last character of the longer string
+                // let extraCharsRight = '';        // Store extra characters from the right side
+                //
+                // // Iterate from the right side of both strings
+                // while (index2Right >= 0) {
+                //     if (index1Right >= 0 && longer[index2Right] === shorter[index1Right]) {
+                //         // If characters match, move to the previous character in both strings
+                //         index1Right--;
+                //     } else {
+                //         // If characters don't match, it's part of the extra substring
+                //         extraCharsRight = longer[index2Right] + extraCharsRight;
+                //     }
+                //     // Move to the previous character in the longer string
+                //     index2Right--;
+                // }
+                //
+                // // Find the maximum overlap length
+                // let overlap = 0;
+                // const minLength = Math.min(extraCharsLeft.length, extraCharsRight.length);
+                //
+                // // Find the longest suffix of str1 that matches the prefix of str2
+                // for (let i = 1; i <= minLength; i++) {
+                //     if (extraCharsLeft.slice(-i) === extraCharsRight.slice(0, i)) {
+                //         overlap = i;
+                //     }
+                // }
+                //
+                // // Concatenate the two strings, avoiding duplicate center
+                // return extraCharsLeft + extraCharsRight.slice(overlap);
             }
 
             // Save the file when the save button is clicked
@@ -417,6 +377,10 @@
 <div id="notesSection" class="notes-section">
     <!-- Notes will be dynamically loaded here -->
 </div>
+
+<form action="/logout" method="post">
+    <button type="submit">Logout</button>
+</form>
 
 </body>
 </html>

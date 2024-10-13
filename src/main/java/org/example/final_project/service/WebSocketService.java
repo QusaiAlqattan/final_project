@@ -1,7 +1,6 @@
 package org.example.final_project.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.example.final_project.model.Branch;
 import org.example.final_project.model.File;
@@ -18,7 +17,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.socket.*;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -116,7 +114,7 @@ public class WebSocketService extends TextWebSocketHandler {
         System.out.println("fileSessions" + fileSessions);
         // Send the current file content to the newly connected session
         if (fileContents.containsKey(fileId)) {
-            session.sendMessage(new TextMessage("{\"content\":\""+ fileContents.get(fileId) +"\"}"));
+            session.sendMessage(new TextMessage(fileContents.get(fileId)));
         }
     }
 
@@ -135,7 +133,7 @@ public class WebSocketService extends TextWebSocketHandler {
                 fileContents.put(fileId, updateContent(message, ""));
             }
 
-            TextMessage newMessage = new TextMessage("{\"content\":\"" + fileContents.get(fileId) + "\"}");
+            TextMessage newMessage = new TextMessage(fileContents.get(fileId));
 
             // Broadcast the changes to all other clients connected to the same file
             for (WebSocketSession s : fileSessions.getOrDefault(fileId, new CopyOnWriteArrayList<>())) {
@@ -170,6 +168,8 @@ public class WebSocketService extends TextWebSocketHandler {
             String type = (String) map.get("type");
             position = (Integer) map.get("position");
             actualPosition = position + offset;
+
+
 
             StringBuilder stringBuilder = new StringBuilder(originalContent);
 
@@ -224,7 +224,7 @@ public class WebSocketService extends TextWebSocketHandler {
             System.out.println("value: " + value);
             e.printStackTrace();
         }
-        return "oops!!!";
+        return "oops!!!, something when wrong";
     }
 
     private String removeSubstring(String original, int startIndex, int length) {
@@ -258,10 +258,9 @@ public class WebSocketService extends TextWebSocketHandler {
     public String createNewFile(String fileId, String content) {
         try {
             File file = fileRepository.getById(Long.parseLong(fileId));
-            String oldVersion = file.getVersion();
-            String newVersion = String.valueOf(Long.parseLong(oldVersion) + 1);
 
             File newFile = new File();
+            String newVersion = lastVersion(file);
             newFile.setVersion(newVersion);
             newFile.setContent(content);
             newFile.setBranch(file.getBranch());
@@ -274,7 +273,9 @@ public class WebSocketService extends TextWebSocketHandler {
 
             fileRepository.save(newFile);
 
-            if (file.getContent() != null) {
+            System.out.println("branch: " + newFile.getBranch().getName());
+
+            if (file.getCreator() != null) {
                 Folder container = file.getContainer();
                 newFile.setContainer(file.getContainer());
 
@@ -296,6 +297,20 @@ public class WebSocketService extends TextWebSocketHandler {
         } catch (Exception e) {
             return "Error saving file";
         }
+    }
+
+    private String lastVersion(File file){
+        List<File> files = fileRepository.findByBranch_UniqueId(file.getBranch().getUniqueId());
+        Long lastVersion = 0L;
+        for (File f : files) {
+            if (f.getName().equals(file.getName())) {
+                if (lastVersion < Long.parseLong(f.getVersion())) {
+                    lastVersion = Long.parseLong(f.getVersion());
+                }
+            }
+        }
+
+        return String.valueOf(lastVersion + 1);
     }
 
     private String extractFileId(WebSocketSession session) {

@@ -35,6 +35,12 @@ public class RESTBranchController {
         return ResponseEntity.ok(branchDTO);
     }
 
+    @DeleteMapping("/{branchId}")
+    public ResponseEntity<String> deleteBranch(@PathVariable Long branchId) {
+        branchService.deleteBranch(branchId);
+        return ResponseEntity.ok("Branch deleted successfully");
+    }
+
     @PostMapping("/merge")
     public ResponseEntity<String> mergeBranches(@RequestBody Map<String, String> requestData) {
         Long sourceBranchId = Long.parseLong(requestData.get("sourceBranchId"));
