@@ -10,13 +10,13 @@ import java.io.IOException;
 
 public class CustomAuthenticationSuccessHandler implements AuthenticationSuccessHandler {
     @Override
-    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
+    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
         String redirectURL;
 
         // Check user roles and set the redirect URL accordingly
-        if ((authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) || (authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("OAUTH2_ADMIN"))) ) {
+        if (authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
             redirectURL = "/admin"; // Redirect for admin role
-        } else if ( (authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_USER"))) || (authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("OAUTH2_USER"))) ) {
+        } else if ( authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_USER")) ) {
             redirectURL = "/branches"; // Redirect for user role
         } else {
             redirectURL = "/"; // Default redirect for users without specific roles

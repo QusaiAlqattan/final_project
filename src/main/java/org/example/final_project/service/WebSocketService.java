@@ -13,6 +13,8 @@ import org.example.final_project.repository.FolderRepository;
 import org.example.final_project.repository.SystemUserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.server.ServerHttpRequest;
+import org.springframework.http.server.ServerHttpResponse;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -31,8 +33,14 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import static org.example.final_project.service.util.WebSocketServiceUtil.extractFileId;
 
+import org.springframework.web.socket.WebSocketHandler;
+import org.springframework.web.socket.WebSocketSession;
+import org.springframework.web.socket.server.HandshakeInterceptor;
+
+import java.util.Map;
+
 @Service
-public class WebSocketService extends TextWebSocketHandler {
+public class WebSocketService extends TextWebSocketHandler implements HandshakeInterceptor {
 
     @Autowired
     private FileRepository fileRepository;
@@ -66,9 +74,27 @@ public class WebSocketService extends TextWebSocketHandler {
     //  !   built in methods
     //  !   ///////////////////////////////////////////////////////////////
     @Override
+    public boolean beforeHandshake(ServerHttpRequest request, ServerHttpResponse response,
+                                   WebSocketHandler wsHandler, Map<String, Object> attributes) {
+        // Extract the current Authentication from SecurityContextHolder
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null) {
+            // Store the Authentication object in the session attributes
+            attributes.put("auth", authentication);
+        }
+
+        return true;
+    }
+
+    @Override
+    public void afterHandshake(ServerHttpRequest request, ServerHttpResponse response,
+                               WebSocketHandler wsHandler, Exception exception) {
+        // You can handle post-handshake actions if needed
+    }
+
+    @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
         lock.lock();
-        System.out.println("afterConnectionEstablished");
         String fileId = extractFileId(session); // Extract the file ID from the URL
         fileSessions.computeIfAbsent(fileId, k -> new CopyOnWriteArrayList<>()).add(session);
         String content = fileService.getFileContent(Long.parseLong(fileId));

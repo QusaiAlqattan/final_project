@@ -105,7 +105,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authz -> authz
 //                        .requestMatchers("/**").permitAll()
                         .requestMatchers("/register", "/login", "js/**", "css/**").permitAll()
-                        .requestMatchers("/branches/**", "/branch-detail/**", "/file/**", "/api/**", "/run-code").hasAnyRole("USER", "ADMIN", "OAUTH2_USER")
+                        .requestMatchers("/branches/**", "/branch-detail/**", "/file/**", "/api/**", "/run-code", "/ws/**", "/oauth2/authorization/github").hasAnyRole("USER", "ADMIN")
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
