@@ -6,12 +6,12 @@ public class SystemUserDTO {
 
     private Long uniqueId;
     private String username;
-    private String password; // Consider removing this in DTOs to avoid sending sensitive data
+    private String password;
     private Integer githubID;
-    private Long roleId; // ID of the associated role
+    private Long roleId;
     private String role;
-    private List<Long> fileIds; // List of IDs of files created by this user
-    private List<Long> noteIds; // List of IDs of notes written by this user
+    private List<Long> fileIds;
+    private List<Long> noteIds;
 
     // Getters and Setters
 
@@ -36,7 +36,7 @@ public class SystemUserDTO {
     }
 
     public void setPassword(String password) {
-        this.password = password; // Ensure to handle sensitive information appropriately
+        this.password = password;
     }
 
     public Integer getGithubID() {

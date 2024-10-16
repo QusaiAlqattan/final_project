@@ -29,7 +29,6 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
 
         // Process the user info from GitHub
         gitHubUserService.processOAuthPostLogin(oAuth2User);
-//        System.out.println("oAuth2User = " + oAuth2User.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("OAUTH2_USER")));
         return oAuth2User;
     }
 }

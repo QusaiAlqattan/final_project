@@ -7,8 +7,8 @@ public class BranchDTO {
 
     private Long uniqueId;
     private String name;
-    private List<Long> folderIds; // Assuming you just want the IDs of the folders
-    private List<Long> fileIds;   // Assuming you just want the IDs of the files
+    private List<Long> folderIds;
+    private List<Long> fileIds;
     private LocalDateTime timestamp;
     private Long parentBranchId;
 

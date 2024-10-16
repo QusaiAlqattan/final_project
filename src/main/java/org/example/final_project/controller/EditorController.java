@@ -8,7 +8,6 @@ public class EditorController {
 
     @GetMapping("/file/{fileId}")
     public String serveEditorPage() {
-        // This will serve the "editor.html" file from the static resources
         return "editor.html";
     }
 }

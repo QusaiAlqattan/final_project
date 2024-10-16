@@ -6,13 +6,13 @@ public class FolderDTO {
 
     private String name;
 
-    private String branchName; // Optional: to represent the branch id
+    private String branchName;
 
-    private String containerName; // Optional: to represent the parent folder id
+    private String containerName;
 
-    private Long branchId; // Optional: to represent the branch id
+    private Long branchId;
 
-    private Long containerId; // Optional: to represent the parent folder id
+    private Long containerId;
 
     public Long getBranchId() {
         return branchId;

@@ -6,6 +6,7 @@ import org.example.final_project.model.Folder;
 import org.example.final_project.repository.BranchRepository;
 import org.example.final_project.repository.FolderRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,7 +26,10 @@ public class FolderService {
         this.branchRepository = branchRepository;
     }
 
-    // Retrieve all filtered Folders
+    //  !   ///////////////////////////////////////////////////////////////
+    //  !   fetch folders
+    //  !   ///////////////////////////////////////////////////////////////
+    // Retrieve all branch Folders
     public List<FolderDTO> getFolders(Long branchId) {
         List<Folder> folders = folderRepository.findByBranch_UniqueId(branchId);
         List<FolderDTO> filteredFolders = new ArrayList<>();
@@ -35,7 +39,26 @@ public class FolderService {
         return filteredFolders;
     }
 
-    // Save a new folder
+    private FolderDTO toDTO(Folder folder) {
+        FolderDTO folderDTO = new FolderDTO();
+        folderDTO.setUniqueId(folder.getUniqueId());
+        folderDTO.setName(folder.getName());
+        if (folder.getBranch() != null) {
+            folderDTO.setBranchName(folder.getBranch().getName());
+        }
+        if (folder.getContainer() != null) {
+            folderDTO.setContainerName(folder.getContainer().getName());
+        }
+        return folderDTO;
+    }
+    //  !   ///////////////////////////////////////////////////////////////
+
+
+
+    //  !   ///////////////////////////////////////////////////////////////
+    //  !   create folders
+    //  !   ///////////////////////////////////////////////////////////////
+    @Transactional
     public void saveFolder(FolderDTO folderDTO, Long branchId) {
         Folder folder = new Folder();
         folder.setName(folderDTO.getName());
@@ -63,25 +86,20 @@ public class FolderService {
             folderRepository.save(container);
         }
 
-        folderRepository.save(folder);
+        try{
+            folderRepository.save(folder);
+        } catch (DataIntegrityViolationException e) {
+            throw new IllegalArgumentException("A folder with this name already exists in the branch.");
+        }
 
     }
+    //  !   ///////////////////////////////////////////////////////////////
 
-    private FolderDTO toDTO(Folder folder) {
-        FolderDTO folderDTO = new FolderDTO();
-        folderDTO.setUniqueId(folder.getUniqueId());
-        folderDTO.setName(folder.getName());
-        if (folder.getBranch() != null) {
-            folderDTO.setBranchName(folder.getBranch().getName());
-        }
-        if (folder.getContainer() != null) {
-            folderDTO.setContainerName(folder.getContainer().getName());
-        }
-        return folderDTO;
-    }
 
-    // Method to delete folder by ID
-    @Transactional
+
+    //  !   ///////////////////////////////////////////////////////////////
+    //  !   delete folder
+    //  !   ///////////////////////////////////////////////////////////////
     public void deleteFolderById(Long folderId) {
         Optional<Folder> folder = folderRepository.findById(folderId);
         if (folder.isPresent()) {
@@ -90,4 +108,5 @@ public class FolderService {
             throw new RuntimeException("Folder not found with id: " + folderId);
         }
     }
+    //  !   ///////////////////////////////////////////////////////////////
 }

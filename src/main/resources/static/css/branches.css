@@ -1,0 +1,126 @@
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f4f4f9; /* Light background for better contrast */
+    color: #333; /* Dark text color */
+    margin: 0;
+    padding: 20px;
+}
+
+h1 {
+    color: #4a90e2; /* Blue color for heading */
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+button {
+    background-color: #4a90e2; /* Blue button color */
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 10px 20px;
+    cursor: pointer;
+    font-size: 16px;
+    margin: 10px 5px;
+    transition: background-color 0.3s, transform 0.2s; /* Smooth transitions */
+}
+
+.header-btn:hover {
+    background-color: #357ab8; /* Darker blue on hover */
+    transform: scale(1.05); /* Slightly enlarge button */
+}
+
+.delete-btn{
+    background-color: #ff4d4d;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Subtle shadow for the table */
+}
+
+th {
+    background-color: #4a90e2; /* Blue header background */
+    color: white; /* White text for header */
+    padding: 15px;
+    text-align: left;
+    font-weight: bold;
+}
+
+td {
+    background-color: #ffffff; /* White cells */
+    border: 1px solid #ddd; /* Light border */
+    padding: 10px;
+    transition: background-color 0.3s; /* Smooth background transition */
+}
+
+tr:nth-child(even) td {
+    background-color: #f9f9f9; /* Zebra striping effect */
+}
+
+tr:hover td {
+    background-color: #e1f5fe; /* Light blue on row hover */
+}
+
+/* Styles for the modal */
+#createBranchModal, #mergeBranchModal {
+    display: none; /* Hidden by default */
+    position: fixed; /* Stay in place */
+    z-index: 1; /* Sit on top */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgba(0, 0, 0, 0.6); /* Dark overlay with opacity */
+}
+
+.modal-content {
+    background-color: #fff; /* White background for modal */
+    margin: 10% auto; /* Center modal */
+    padding: 20px;
+    border-radius: 8px; /* Rounded corners */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Subtle shadow */
+    width: 80%; /* Could be more or less, depending on screen size */
+    animation: fadeIn 0.3s; /* Fade-in animation for modal */
+}
+
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+    color: #4a90e2; /* Change color on hover */
+    text-decoration: none;
+    cursor: pointer;
+}
+
+input, select {
+    width: 100%; /* Full-width for inputs */
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #ddd; /* Light border */
+    border-radius: 5px; /* Rounded corners */
+    transition: border-color 0.3s; /* Smooth border transition */
+}
+
+input:focus, select:focus {
+    border-color: #4a90e2; /* Highlight border on focus */
+    outline: none; /* Remove default outline */
+}
+
+/* Fade-in animation for modal */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}

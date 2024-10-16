@@ -3,11 +3,11 @@ package org.example.final_project.dto;
 public class NoteDTO {
 
     private Long uniqueId;
-    private Long writerId;  // ID of the writer (SystemUser)
+    private Long writerId;
     private String writerName;
-    private Long fileId;    // ID of the associated file
-    private String content;  // Content of the note
-    private int rowNumber;   // Row number for the note
+    private Long fileId;
+    private String content;
+    private int rowNumber;
 
     // Getters and Setters
 

@@ -24,24 +24,47 @@ public class NoteService {
     private final FileRepository fileRepository;
     private final NoteRepository noteRepository;
 
-
     public NoteService(SystemUserRepository systemUserRepository, FileRepository fileRepository, NoteRepository noteRepository) {
         this.systemUserRepository = systemUserRepository;
         this.fileRepository = fileRepository;
         this.noteRepository = noteRepository;
     }
 
+    //  !   ///////////////////////////////////////////////////////////////
+    //  !   fetch notes
+    //  !   ///////////////////////////////////////////////////////////////
+    public List<NoteDTO> getNotesByFileId(Long fileId) {
+        List<Note> notes = noteRepository.findByFileUniqueId(fileId);
+        List<NoteDTO> noteDTOList = new ArrayList<>();
+        for (Note note : notes) {
+            NoteDTO noteDTO = toDTO(note);
+            noteDTOList.add(noteDTO);
+        }
+        return noteDTOList;
+    }
+
+    private NoteDTO toDTO(Note note) {
+        NoteDTO noteDTO = new NoteDTO();
+        noteDTO.setContent(note.getContent());
+        noteDTO.setRowNumber(note.getRowNumber());
+        noteDTO.setWriterName(note.getWriter().getUsername());
+        return noteDTO;
+    }
+    //  !   ///////////////////////////////////////////////////////////////
+
+
+
+    //  !   ///////////////////////////////////////////////////////////////
+    //  !   create notes
+    //  !   ///////////////////////////////////////////////////////////////
     public String createNote(Long fileId, NoteDTO noteDTO) {
         // Get the authenticated user
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String username = auth.getName();
-        System.out.println(username);
-        System.out.println(username.getClass());
         SystemUser user = systemUserRepository.findByUsername(username);
         if (user == null) {
             return "User not found";
         }
-        System.out.println("user" + user);
 
         // Get the file associated with the note
         Optional<File> fileOptional = fileRepository.findById(fileId);
@@ -60,23 +83,5 @@ public class NoteService {
 
         return "Note added successfully";
     }
-
-    public List<NoteDTO> getNotesByFileId(Long fileId) {
-        List<Note> notes = noteRepository.findByFileUniqueId(fileId);
-        List<NoteDTO> noteDTOList = new ArrayList<>();
-        for (Note note : notes) {
-            NoteDTO noteDTO = toDTO(note);
-            noteDTOList.add(noteDTO);
-        }
-        return noteDTOList;
-    }
-
-    private NoteDTO toDTO(Note note) {
-        NoteDTO noteDTO = new NoteDTO();
-        noteDTO.setContent(note.getContent());
-        noteDTO.setRowNumber(note.getRowNumber());
-        noteDTO.setWriterName(note.getWriter().getUsername());
-        return noteDTO;
-    }
-
+    //  !   ///////////////////////////////////////////////////////////////
 }

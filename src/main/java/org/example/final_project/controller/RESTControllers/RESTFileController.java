@@ -39,7 +39,7 @@ public class RESTFileController {
 
     @PostMapping("{branchId}")
     public ResponseEntity<FileDTO> createFile(@RequestBody FileDTO fileDTO, @PathVariable Long branchId) {
-        fileService.createFile(fileDTO, branchId);
+        fileService.createFile(fileDTO, branchId, "");
         return ResponseEntity.status(HttpStatus.CREATED).body(fileDTO);
     }
 

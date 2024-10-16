@@ -103,10 +103,10 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(authz -> authz
-                        .requestMatchers("/**").permitAll()
-                        .requestMatchers("/register", "/login", "custom/**").permitAll()
-                        .requestMatchers("/user").hasAnyRole("USER", "ADMIN", "OAUTH2_USER")
-                        .requestMatchers("/admin").hasRole("ADMIN")
+//                        .requestMatchers("/**").permitAll()
+                        .requestMatchers("/register", "/login", "js/**", "css/**").permitAll()
+                        .requestMatchers("/branches/**", "/branch-detail/**", "/file/**", "/api/**", "/run-code").hasAnyRole("USER", "ADMIN", "OAUTH2_USER")
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form

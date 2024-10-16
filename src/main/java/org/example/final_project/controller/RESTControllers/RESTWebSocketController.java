@@ -32,19 +32,6 @@ public class RESTWebSocketController {
     @Autowired
     private WebSocketService webSocketService;
 
-//    @GetMapping("/files/{fileId}/content")
-//    public ResponseEntity<?> getFileContent(@PathVariable String fileId) {
-//        // Fetch file content from your storage (file system, database, etc.)
-//        File file = fileRepository.getById(Long.parseLong(fileId));
-//        String content = file.getContent();
-//
-//        Map<String, String> response = new HashMap<>();
-//        response.put("name", file.getName());  // You can adjust this based on your file metadata
-//        response.put("content", content);
-//        return ResponseEntity.ok(response);
-//    }
-
-    // Save file content
     @PostMapping("/save/{fileId}")
     public ResponseEntity<String> saveFile(@PathVariable String fileId, @RequestBody String content) {
         try {
@@ -64,19 +51,4 @@ public class RESTWebSocketController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error fetching file content");
         }
     }
-
-//    @PostMapping("/lock/acquire/{fileId}")
-//    public ResponseEntity<Map<String, Boolean>> acquireLock(@PathVariable String fileId) {
-//        Map<String, Boolean> response = new HashMap<>();
-//        Boolean locked = webSocketService.acquireLock(fileId);
-//        response.put("locked", locked);
-//        return ResponseEntity.ok(response);
-//    }
-
-//    @PostMapping("/lock/release/{fileId}")
-//    public ResponseEntity<Void> releaseLock(@PathVariable String fileId) {
-//        webSocketService.releaseLock(fileId);
-//        return ResponseEntity.noContent().build();
-//    }
-
 }

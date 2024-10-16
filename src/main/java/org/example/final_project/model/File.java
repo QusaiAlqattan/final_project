@@ -5,8 +5,12 @@ import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 
 @Entity
+@Table(uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"name", "version", "branch_id"})
+})
 public class File {
 
     @Id
@@ -20,66 +24,20 @@ public class File {
 
     @ManyToOne
     @JoinColumn(name = "folder_id")
-    @JsonBackReference // Prevents infinite recursion when serializing
+    @JsonBackReference
     private Folder container;
 
     @ManyToOne
     @JoinColumn(name = "branch_id")
-    @JsonBackReference // Prevents infinite recursion when serializing
+    @JsonBackReference
     private Branch branch;
 
     @ManyToOne
     @JoinColumn(name = "creator_id")
     private SystemUser creator;
 
-    @OneToMany(mappedBy = "file")
+    @OneToMany(mappedBy = "file", cascade = CascadeType.REMOVE)
     private List<Note> notes;
-
-//    @Transient  // This field won't be persisted in the database
-//    private String containerName;
-//
-//    @Transient  // This field won't be persisted in the database
-//    private String branchName;
-//
-//    @Transient
-//    private Long containerId;  // Not stored in DB, but captured from request
-//
-//    @Transient
-//    private Long branchId;     // Not stored in DB, but captured from request
-
-    // Getters and Setters...
-
-//    public Long getContainerId() {
-//        return containerId;
-//    }
-//
-//    public void setContainerId(Long containerId) {
-//        this.containerId = containerId;
-//    }
-//
-//    public Long getBranchId() {
-//        return branchId;
-//    }
-//
-//    public void setBranchId(Long branchId) {
-//        this.branchId = branchId;
-//    }
-//
-//    public String getContainerName() {
-//        return containerName;
-//    }
-//
-//    public void setContainerName(String containerName) {
-//        this.containerName = containerName;
-//    }
-//
-//    public String getBranchName() {
-//        return branchName;
-//    }
-//
-//    public void setBranchName(String branchName) {
-//        this.branchName = branchName;
-//    }
 
     public Long getUniqueId() {
         return uniqueId;
@@ -90,7 +48,7 @@ public class File {
     }
 
     public Folder getContainer() {
-        return container; // Updated getter
+        return container;
     }
 
     public void setContainer(Folder container) { // Updated setter
@@ -152,4 +110,20 @@ public class File {
     public void setNotes(List<Note> notes) {
         this.notes = notes;
     }
+
+//    @Override
+//    public boolean equals(Object o) {
+//        if (this == o) return true;
+//        if (o == null || getClass() != o.getClass()) return false;
+//
+//        File file = (File) o;
+//
+//        return Objects.equals(name, file.name) &&
+//                Objects.equals(version, file.version);
+//    }
+//
+//    @Override
+//    public int hashCode() {
+//        return Objects.hash(name, version);
+//    }
 }

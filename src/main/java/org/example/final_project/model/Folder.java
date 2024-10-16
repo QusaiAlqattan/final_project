@@ -5,8 +5,10 @@ import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 
 import java.util.List;
+import java.util.Objects;
 
 @Entity
+@Table(uniqueConstraints = {@UniqueConstraint(columnNames = {"name", "branch_id"})})
 public class Folder {
 
     @Id
@@ -21,62 +23,16 @@ public class Folder {
 
     @ManyToOne
     @JoinColumn(name = "container_id")
-    @JsonBackReference // Prevents infinite recursion when serializing
+    @JsonBackReference
     private Folder container;
 
     @OneToMany(mappedBy = "container", cascade = CascadeType.REMOVE)
-    @JsonManagedReference // Tells Jackson to manage the serialization of subFolders
+    @JsonManagedReference
     private List<Folder> subFolders;
 
     @OneToMany(mappedBy = "container", cascade = CascadeType.REMOVE)
-    @JsonManagedReference // Tells Jackson to manage the serialization of subFolders
+    @JsonManagedReference
     private List<File> files;
-
-//    @Transient  // This field won't be persisted in the database
-//    private String containerName;
-//
-//    @Transient  // This field won't be persisted in the database
-//    private String branchName;
-
-//    @Transient
-//    private Long branchId;  // Transient field to capture branch ID from the request
-//
-//    @Transient
-//    private Long parentFolderId;  // Transient field to capture parent folder ID from the request
-
-    // Getters and Setters...
-
-//    public Long getBranchId() {
-//        return branchId;
-//    }
-//
-//    public void setBranchId(Long branchId) {
-//        this.branchId = branchId;
-//    }
-//
-//    public Long getParentFolderId() {
-//        return parentFolderId;
-//    }
-//
-//    public void setParentFolderId(Long parentFolderId) {
-//        this.parentFolderId = parentFolderId;
-//    }
-//
-//    public String getContainerName() {
-//        return containerName;
-//    }
-//
-//    public void setContainerName(String containerName) {
-//        this.containerName = containerName;
-//    }
-//
-//    public String getBranchName() {
-//        return branchName;
-//    }
-//
-//    public void setBranchName(String branchName) {
-//        this.branchName = branchName;
-//    }
 
     public Long getUniqueId() {
         return uniqueId;
@@ -125,4 +81,19 @@ public class Folder {
     public void setFiles(List<File> files) {
         this.files = files;
     }
+
+//    @Override
+//    public boolean equals(Object o) {
+//        if (this == o) return true;
+//        if (o == null || getClass() != o.getClass()) return false;
+//
+//        Folder folder = (Folder) o;
+//
+//        return Objects.equals(name, folder.name);
+//    }
+//
+//    @Override
+//    public int hashCode() {
+//        return Objects.hash(name);
+//    }
 }

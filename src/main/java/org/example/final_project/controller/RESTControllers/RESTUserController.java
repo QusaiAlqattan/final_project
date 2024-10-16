@@ -15,7 +15,7 @@ import java.util.Map;
 import java.util.HashMap;
 
 @RestController
-@RequestMapping("/api/users") // Base URL for the controller
+@RequestMapping("admin/api/users")
 public class RESTUserController {
 
     private final SystemUserService systemUserService;
@@ -49,7 +49,7 @@ public class RESTUserController {
     @PostMapping
     public ResponseEntity<String> createUser(@RequestBody SystemUserDTO systemUserDTO) {
         try {
-            systemUserService.createUser(systemUserDTO); // Implement this method to handle user creation logic
+            systemUserService.createUser(systemUserDTO);
             return ResponseEntity.status(HttpStatus.CREATED).body("User created successfully.");
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error creating user: " + e.getMessage());
@@ -58,7 +58,7 @@ public class RESTUserController {
 
     @PutMapping("/{id}/role")
     public ResponseEntity<Void> updateUserRole(@PathVariable Long id, @RequestBody SystemUserDTO userDTO) {
-        systemUserService.updateUserRole(id, userDTO.getRoleId()); // Update user role
+        systemUserService.updateUserRole(id, userDTO.getRoleId());
         return ResponseEntity.noContent().build();
     }
 

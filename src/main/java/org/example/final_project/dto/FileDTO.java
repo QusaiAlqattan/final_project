@@ -10,11 +10,11 @@ public class FileDTO {
     private String content;
     private String version;
     private LocalDateTime timestamp;
-    private Long containerId; // ID of the containing folder
-    private Long branchId;    // ID of the branch
-    private Long creatorId;   // ID of the creator
-    private List<Long> noteIds; // List of note IDs related to this file
-    private String containerName; // Name of the container, if needed
+    private Long containerId;
+    private Long branchId;
+    private Long creatorId;
+    private List<Long> noteIds;
+    private String containerName;
     private String branchName;
 
     // Getters and Setters

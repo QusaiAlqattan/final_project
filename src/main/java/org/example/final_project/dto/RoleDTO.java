@@ -6,7 +6,7 @@ public class RoleDTO {
 
     private Long uniqueId;
     private String name;
-    private List<Long> userIds; // List of IDs of associated SystemUsers
+    private List<Long> userIds;
 
     // Getters and Setters
 

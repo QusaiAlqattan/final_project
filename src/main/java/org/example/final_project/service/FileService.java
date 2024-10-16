@@ -10,6 +10,7 @@ import org.example.final_project.repository.FileRepository;
 import org.example.final_project.repository.FolderRepository;
 import org.example.final_project.repository.SystemUserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -37,7 +38,10 @@ public class FileService {
         this.systemUserRepository = systemUserRepository;
     }
 
-    // Retrieve all filtered Files
+    //  !   ///////////////////////////////////////////////////////////////
+    //  !   fetch files
+    //  !   ///////////////////////////////////////////////////////////////
+    // Retrieve all branch Files
     public List<FileDTO> getFiles(Long branchId) {
         List<File> files = fileRepository.findByBranch_UniqueId(branchId);
         List<FileDTO> filteredFiles = new ArrayList<>();
@@ -45,92 +49,6 @@ public class FileService {
             filteredFiles.add(toDTO(file));
         }
         return filteredFiles;
-    }
-
-    public void createFile(FileDTO fileDto, Long branchId) {
-        File file = new File();
-        file.setName(fileDto.getName());
-
-        file.setContent(fileDto.getContent());
-
-        List<File> branchFiles = fileRepository.findByBranch_UniqueId(branchId);
-        Boolean duplicate = false;
-        for (File branchFile : branchFiles) {
-            if (branchFile.getName().equals(fileDto.getName())) {
-                duplicate = true;
-                file.setVersion(String.valueOf(Long.parseLong(branchFile.getVersion()) + 1));
-            }
-        }
-        if (!duplicate) {
-            file.setVersion("1"); // Default version
-        }
-
-        file.setTimestamp(LocalDateTime.now());
-
-        // Set folder if provided
-        if (fileDto.getContainerId() != null && folderRepository.findById(fileDto.getContainerId()).isPresent()) {
-            Folder container = folderRepository.findById(fileDto.getContainerId()).get();
-            file.setContainer(container);
-
-            // add to the sub folders in the container
-            List<File> subFiles = container.getFiles();
-            subFiles.add(file);
-            container.setFiles(subFiles);
-            folderRepository.save(container);
-        }
-
-        // Set branch if provided
-        Branch branch = branchRepository.findById(branchId).get();
-        file.setBranch(branch);
-
-        // update branch
-        List<File> oldBranchFiles = branch.getFiles();
-        oldBranchFiles.add(file);
-        branch.setFiles(oldBranchFiles);
-        branchRepository.save(branch);
-
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        SystemUser user = systemUserRepository.findByUsername(auth.getName());
-        file.setCreator(user);
-
-        fileRepository.save(file);
-
-    }
-
-    @Transactional
-    public void deleteFileById(Long fileId) {
-        Optional<File> file = fileRepository.findById(fileId);
-        if (file.isPresent()) {
-            fileRepository.deleteById(fileId);
-        } else {
-            throw new RuntimeException("File not found with id: " + fileId);
-        }
-    }
-
-//    public File getFileById(Long id) {
-//        return fileRepository.findById(id).orElse(null);
-//    }
-//
-//    public File updateFile(Long id, FileDTO fileDto) {
-//        File file = getFileById(id);
-//        if (file != null) {
-//            file.setName(fileDto.getName());
-//            file.setContents(fileDto.getContents());
-//            // Update version and timestamp or other fields as necessary
-//            file.setVersion("2"); // Increment version, logic can be improved based on your requirements
-//            file.setTimestamp(LocalDateTime.now());
-//            // Optionally update relationships if needed
-//            return fileRepository.save(file);
-//        }
-//        return null; // or throw an exception
-//    }
-//
-//    public void deleteFile(Long id) {
-//        fileRepository.deleteById(id);
-//    }
-    public String getFileContent(Long fileId) {
-        File file = fileRepository.findById(fileId).get();
-        return file.getContent();
     }
 
     private FileDTO toDTO(File file) {
@@ -149,4 +67,94 @@ public class FileService {
         }
         return fileDTO;
     }
+
+    public String getFileContent(Long fileId) {
+        File file = fileRepository.findById(fileId).get();
+        return file.getContent();
+    }
+    //  !   ///////////////////////////////////////////////////////////////
+
+
+
+    //  !   ///////////////////////////////////////////////////////////////
+    //  !   create file
+    //  !   ///////////////////////////////////////////////////////////////
+    @Transactional
+    public void createFile(FileDTO fileDto, Long branchId, String content) {
+        try {
+            File file = new File();
+            file.setName(fileDto.getName());
+            file.setContent(content);
+            String newVersion = lastVersion(fileDto, branchId);
+            file.setVersion(newVersion);
+
+            file.setTimestamp(LocalDateTime.now());
+
+            // Set folder if provided
+            if (fileDto.getContainerId() != null && folderRepository.findById(fileDto.getContainerId()).isPresent()) {
+                Folder container = folderRepository.findById(fileDto.getContainerId()).get();
+                file.setContainer(container);
+
+                // add to the sub folders in the container
+                List<File> subFiles = container.getFiles();
+                subFiles.add(file);
+                container.setFiles(subFiles);
+                folderRepository.save(container);
+            }
+
+            // Set branch if provided
+            Branch branch = branchRepository.findById(branchId).get();
+            file.setBranch(branch);
+
+            // update branch
+            List<File> oldBranchFiles = branch.getFiles();
+            oldBranchFiles.add(file);
+            branch.setFiles(oldBranchFiles);
+            branchRepository.save(branch);
+
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            SystemUser user = systemUserRepository.findByUsername(auth.getName());
+            file.setCreator(user);
+
+            try{
+                fileRepository.save(file);
+            } catch (DataIntegrityViolationException e) {
+                throw new IllegalArgumentException("A file with this name and version already exists in the branch.");
+            }
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Couldn't create a file.: "+e.getMessage());
+        }
+    }
+
+    private String lastVersion(FileDTO fileDTO, Long branchId){
+        Branch branch = branchRepository.findById(branchId).get();
+        List<File> files = fileRepository.findByBranch_UniqueId(branch.getUniqueId());
+        Long lastVersion = 0L;
+        for (File f : files) {
+            if (f.getName().equals(fileDTO.getName())) {
+                if (lastVersion < Long.parseLong(f.getVersion())) {
+                    lastVersion = Long.parseLong(f.getVersion());
+                }
+            }
+        }
+
+        return String.valueOf(lastVersion + 1);
+    }
+    //  !   ///////////////////////////////////////////////////////////////
+
+
+
+    //  !   ///////////////////////////////////////////////////////////////
+    //  !   delete files
+    //  !   ///////////////////////////////////////////////////////////////
+    public void deleteFileById(Long fileId) {
+        Optional<File> file = fileRepository.findById(fileId);
+        if (file.isPresent()) {
+            fileRepository.deleteById(fileId);
+        } else {
+            throw new RuntimeException("File not found");
+        }
+    }
+    //  !   ///////////////////////////////////////////////////////////////
+
 }

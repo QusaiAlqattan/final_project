@@ -4,53 +4,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Registration</title>
+
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/register.css">
 </head>
 <body>
-<div class="container">
-    <h2 class="mt-5">Create an Account</h2>
-    <form id="registrationForm" class="mt-4">
-        <div class="form-group">
-            <label for="username">Username:</label>
-            <input type="text" class="form-control" id="username" required>
-        </div>
-        <div class="form-group">
-            <label for="password">Password:</label>
-            <input type="password" class="form-control" id="password" required>
-        </div>
-        <button type="submit" class="btn btn-primary">Register</button>
-    </form>
+
+<div class="container mt-5">
+    <h2>Create an Account</h2>
+    <div class="form-container mt-4">
+        <form id="registrationForm">
+            <div class="form-group">
+                <label for="username">Username:</label>
+                <input type="text" class="form-control" id="username" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <input type="password" class="form-control" id="password" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Register</button>
+        </form>
+    </div>
 </div>
 
-<script>
-    // Handle form submission
-    document.getElementById('registrationForm').addEventListener('submit', async function(event) {
-        event.preventDefault(); // Prevent the default form submission
-
-        const username = document.getElementById('username').value;
-        const password = document.getElementById('password').value;
-
-        const userData = {
-            username: username,
-            password: password,
-        };
-
-        // Send POST request to create a new user
-        const response = await fetch('/api/users', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(userData), // Convert the user data to JSON
-        });
-
-        if (response.ok) {
-            alert('User registered successfully!');
-            // Optionally redirect to a login page or another page
-        } else {
-            alert('Failed to register user. Please try again.');
-        }
-    });
-</script>
+<script src="/js/register.js"></script>
 </body>
 </html>

@@ -1,7 +1,6 @@
 package org.example.final_project.controller.RESTControllers;
 
 import org.example.final_project.dto.FolderDTO;
-import org.example.final_project.model.Folder;
 import org.example.final_project.repository.BranchRepository;
 import org.example.final_project.repository.FolderRepository;
 import org.example.final_project.service.FolderService;
@@ -11,7 +10,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/folders")

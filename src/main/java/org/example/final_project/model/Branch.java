@@ -13,15 +13,15 @@ public class Branch {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long uniqueId;
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String name;
 
     @OneToMany(mappedBy = "branch", cascade = CascadeType.REMOVE)
-    @JsonManagedReference // Tells Jackson to manage the serialization of subFolders
+    @JsonManagedReference
     private List<Folder> folders;
 
     @OneToMany(mappedBy = "branch", cascade = CascadeType.REMOVE)
-    @JsonManagedReference // Tells Jackson to manage the serialization of subFolders
+    @JsonManagedReference
     private List<File> files;
 
     private LocalDateTime timestamp;

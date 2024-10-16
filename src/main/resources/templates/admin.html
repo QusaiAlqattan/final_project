@@ -5,110 +5,32 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manage User Roles</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/admin.css">
 </head>
 <body>
-<div class="container">
-    <h2 class="mt-5">Manage User Roles</h2>
-    <table class="table table-striped mt-3">
-        <thead>
-        <tr>
-            <th>UserName</th>
-            <th>Current Role</th>
-            <th>Action</th>
-        </tr>
-        </thead>
-        <tbody id="userTableBody">
-        <!-- User rows will be inserted here -->
-        </tbody>
-    </table>
+
+<div class="container mt-5">
+    <h2>Manage User Roles</h2>
+    <div class="table-container mt-4">
+        <table class="table table-striped table-hover">
+            <thead class="thead-dark">
+            <tr>
+                <th>UserName</th>
+                <th>Current Role</th>
+                <th>Action</th>
+            </tr>
+            </thead>
+            <tbody id="userTableBody">
+            <!-- User rows will be inserted here -->
+            </tbody>
+        </table>
+    </div>
 </div>
 
 <form action="/logout" method="post">
-    <button type="submit">Logout</button>
+    <button type="submit" class="btn btn-danger logout-button">Logout</button>
 </form>
 
-<script>
-    // Fetch users and populate the table
-    async function fetchUsers() {
-        const response = await fetch('/api/users'); // Adjust this API endpoint as needed
-        const users = await response.json();
-        const userTableBody = document.getElementById('userTableBody');
-        userTableBody.innerHTML = ''; // Clear existing rows
-
-        users.forEach(user => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                    <td>${user.username}</td>
-                    <td>
-                        <select id="roleSelect-${user.uniqueId}">
-                            <!-- Populate role options dynamically -->
-                        </select>
-                    </td>
-                    <td>
-                        <button class="btn btn-primary" onclick="saveRole(${user.uniqueId})">Save</button>
-                        <button class="btn btn-danger" onclick="confirmDelete(${user.uniqueId})">Delete</button>
-                    </td>
-                `;
-            userTableBody.appendChild(row);
-            populateRoles(row.querySelector(`#roleSelect-${user.uniqueId}`), user.roleId); // Pass user role ID
-        });
-    }
-
-    async function populateRoles(selectElement, currentRoleId) {
-        const response = await fetch('/api/roles'); // API to get all roles
-        const roles = await response.json();
-        console.log(roles);
-
-        roles.forEach(role => {
-            const option = document.createElement('option');
-            option.value = role.uniqueId; // Role ID
-            option.textContent = role.name; // Role Name
-
-            // Set the current role as selected
-            if (role.uniqueId === currentRoleId) {
-                option.selected = true; // Select the user's current role
-            }
-            selectElement.appendChild(option);
-        });
-    }
-
-    async function saveRole(userId) {
-        const selectElement = document.getElementById(`roleSelect-${userId}`);
-        const newRoleId = selectElement.value;
-
-        const response = await fetch(`/api/users/${userId}/role`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ roleId: newRoleId }), // Send role ID
-        });
-
-        if (response.ok) {
-            alert('Role updated successfully!');
-            fetchUsers(); // Refresh the user list
-        } else {
-            alert('Failed to update role.');
-        }
-    }
-
-    async function confirmDelete(userId) {
-        if (confirm('Are you sure you want to delete this user?')) {
-            const response = await fetch(`/api/users/${userId}`, {
-                method: 'DELETE',
-            });
-
-            if (response.ok) {
-                alert('User deleted successfully!');
-                fetchUsers(); // Refresh the user list
-            } else {
-                alert('Failed to delete user.');
-            }
-        }
-    }
-
-    // Fetch users when the page loads
-    window.onload = fetchUsers;
-</script>
+<script src="/js/admin.js"></script>
 </body>
 </html>

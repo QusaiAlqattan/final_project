@@ -2,6 +2,7 @@ package org.example.final_project.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.example.final_project.dto.FileDTO;
 import org.example.final_project.model.Branch;
 import org.example.final_project.model.File;
 import org.example.final_project.model.Folder;
@@ -11,11 +12,15 @@ import org.example.final_project.repository.FileRepository;
 import org.example.final_project.repository.FolderRepository;
 import org.example.final_project.repository.SystemUserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.socket.*;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
+
+import static org.example.final_project.service.util.WebSocketServiceUtil.*;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -23,6 +28,8 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.ReentrantLock;
+
+import static org.example.final_project.service.util.WebSocketServiceUtil.extractFileId;
 
 @Service
 public class WebSocketService extends TextWebSocketHandler {
@@ -52,70 +59,29 @@ public class WebSocketService extends TextWebSocketHandler {
     private ConcurrentHashMap<String, CopyOnWriteArrayList<WebSocketSession>> fileSessions = new ConcurrentHashMap<>();
 
     private static ConcurrentHashMap<String, String> fileLocks = new ConcurrentHashMap<>();
+    @Autowired
+    private FileService fileService;
 
-    // Acquire lock for a file
-//    public boolean acquireLock(String fileId) {
-//        System.out.println("acquireLock");
-//        try{
-//            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-//            String username = auth.getName();
-//            System.out.println("fileLocks" + fileLocks);
-//            if (fileLocks.containsKey(fileId) && !fileLocks.get(fileId).equals(username)) {
-//                System.out.println("222222222222222222");
-//                return false; // The file is already locked
-//            }
-//            System.out.println("username" + username);
-//            fileLocks.put(fileId, username);
-//            broadcastLockMessage(fileId, username);
-//            return true; // Lock acquired
-//        }catch (Exception e){
-//            e.printStackTrace();
-//            return false;
-//        }
-//    }
-//
-//    // Release lock for a file
-//    public void releaseLock(String fileId) {
-//        System.out.println("releaseLock");
-//        try{
-//            String username = fileLocks.remove(fileId);
-//            broadcastUnlockMessage(fileId, username);
-//        }catch (Exception e){
-//            e.printStackTrace();
-//        }
-//    }
-
-//    private void broadcastLockMessage(String fileId, String username) throws IOException {
-//    System.out.println("broadcastLockMessage");
-//        TextMessage lockMessage = new TextMessage("{\"type\":\"LOCK\", \"user\":\"" + username + "\"}");
-//        System.out.println("fileSessions" + fileSessions);
-//        for (WebSocketSession session : fileSessions.getOrDefault(fileId, new CopyOnWriteArrayList<>())) {
-//            if (session.isOpen()) {
-//                session.sendMessage(lockMessage);
-//            }
-//        }
-//    }
-//
-//    private void broadcastUnlockMessage(String fileId, String username) throws IOException {
-//        System.out.println("broadcastUnlockMessage");
-//        TextMessage unlockMessage = new TextMessage("{\"type\":\"UNLOCK\"}");
-//        for (WebSocketSession session : fileSessions.getOrDefault(fileId, new CopyOnWriteArrayList<>())) {
-//            if (session.isOpen()) {
-//                session.sendMessage(unlockMessage);
-//            }
-//        }
-//    }
-
+    //  !   ///////////////////////////////////////////////////////////////
+    //  !   built in methods
+    //  !   ///////////////////////////////////////////////////////////////
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
+        lock.lock();
         System.out.println("afterConnectionEstablished");
         String fileId = extractFileId(session); // Extract the file ID from the URL
         fileSessions.computeIfAbsent(fileId, k -> new CopyOnWriteArrayList<>()).add(session);
-        System.out.println("fileSessions" + fileSessions);
+        String content = fileService.getFileContent(Long.parseLong(fileId));
         // Send the current file content to the newly connected session
-        if (fileContents.containsKey(fileId)) {
+        if (!fileContents.containsKey(fileId)) {
+            if (content != null && content.length() > 0) {
+                fileContents.put(fileId, content);
+                session.sendMessage(new TextMessage(fileContents.get(fileId)));
+            }
+        }else {
             session.sendMessage(new TextMessage(fileContents.get(fileId)));
         }
+        lock.unlock();
     }
 
     @Override
@@ -155,6 +121,32 @@ public class WebSocketService extends TextWebSocketHandler {
         }
     }
 
+    @Override
+    public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
+        lock.lock();
+        System.out.println("afterConnectionClosed");
+        String fileId = extractFileId(session); // Extract the file ID from the URL
+        CopyOnWriteArrayList<WebSocketSession> sessions = fileSessions.get(fileId);
+
+        if (sessions != null) {
+            sessions.remove(session);
+
+            // If no more sessions are left, clear unsaved changes
+            if (sessions.isEmpty()) {
+                System.out.println("remove");
+                fileSessions.remove(fileId); // Optionally remove the entry for the fileId
+                fileContents.remove(fileId);  // Remove unsaved changes for the file
+            }
+        }
+        lock.unlock();
+    }
+    //  !   ///////////////////////////////////////////////////////////////
+
+
+
+    //  !   ///////////////////////////////////////////////////////////////
+    //  !   custom methods
+    //  !   ///////////////////////////////////////////////////////////////
     private String updateContent(TextMessage message, String originalContent){
         int position = 0;
         int actualPosition = 0;
@@ -196,20 +188,20 @@ public class WebSocketService extends TextWebSocketHandler {
                 if (offset != 0) {
                     if (actualPosition >= prevPosition) {
                         // i do care about the offset
-                        String output = removeSubstring(originalContent, actualPosition, tempOffset);
+                        String output = removeSubstring(originalContent, actualPosition, tempOffset, offset);
                         offset -= tempOffset;
                         prevPosition = actualPosition;
                         return output;
                     } else {
                         // dont care about the offset
-                        String output = removeSubstring(originalContent, position, tempOffset);
+                        String output = removeSubstring(originalContent, position, tempOffset, offset);
                         offset -= tempOffset;
                         prevPosition = position;
                         return output;
                     }
                 }else {
                     // dont care about the offset
-                    String output = removeSubstring(originalContent, position, tempOffset);
+                    String output = removeSubstring(originalContent, position, tempOffset, offset);
                     offset -= tempOffset;
                     prevPosition = position;
                     return output;
@@ -227,93 +219,27 @@ public class WebSocketService extends TextWebSocketHandler {
         return "oops!!!, something when wrong";
     }
 
-    private String removeSubstring(String original, int startIndex, int length) {
-        // Check for valid index and length
-        if (startIndex < 0) {
-            startIndex -= offset;
-        }
-
-        // Concatenate the part before and after the substring to be removed
-        return original.substring(0, startIndex) + original.substring(startIndex + length);
-    }
-
-    @Override
-    public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
-        System.out.println("afterConnectionClosed");
-        String fileId = extractFileId(session); // Extract the file ID from the URL
-        CopyOnWriteArrayList<WebSocketSession> sessions = fileSessions.get(fileId);
-
-        if (sessions != null) {
-            sessions.remove(session);
-
-            // If no more sessions are left, clear unsaved changes
-            if (sessions.isEmpty()) {
-                System.out.println("remove");
-                fileSessions.remove(fileId); // Optionally remove the entry for the fileId
-                fileContents.remove(fileId);  // Remove unsaved changes for the file
-            }
-        }
-    }
-
+    @Transactional
     public String createNewFile(String fileId, String content) {
         try {
             File file = fileRepository.getById(Long.parseLong(fileId));
-
-            File newFile = new File();
-            String newVersion = lastVersion(file);
-            newFile.setVersion(newVersion);
-            newFile.setContent(content);
-            newFile.setBranch(file.getBranch());
-            newFile.setTimestamp(LocalDateTime.now());
-            newFile.setName(file.getName());
-
-            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            SystemUser user = systemUserRepository.findByUsername(auth.getName());
-            newFile.setCreator(user);
-
-            fileRepository.save(newFile);
-
-            System.out.println("branch: " + newFile.getBranch().getName());
-
-            if (file.getCreator() != null) {
-                Folder container = file.getContainer();
-                newFile.setContainer(file.getContainer());
-
-                // add to the sub folders in the container
-                List<File> subFiles = container.getFiles();
-                subFiles.add(file);
-                container.setFiles(subFiles);
-                folderRepository.save(container);
+            FileDTO fileDTO = new FileDTO();
+            fileDTO.setName(file.getName());
+            fileDTO.setContent(content);
+            fileDTO.setCreatorId(file.getCreator().getUniqueId());
+            fileDTO.setVersion(file.getVersion());
+            fileDTO.setBranchId(file.getBranch().getUniqueId());
+            if (file.getContainer() != null){
+                fileDTO.setContainerId(file.getContainer().getUniqueId());
             }
+            fileDTO.setTimestamp(file.getTimestamp());
 
-            // update branch
-            Branch branch = file.getBranch();
-            List<File> oldBranchFiles = branch.getFiles();
-            oldBranchFiles.add(file);
-            branch.setFiles(oldBranchFiles);
-            branchRepository.save(branch);
+            fileService.createFile(fileDTO, file.getBranch().getUniqueId(), content) ;
 
             return "File saved successfully!";
         } catch (Exception e) {
-            return "Error saving file";
+            return "Error saving file" + e.getMessage();
         }
     }
-
-    private String lastVersion(File file){
-        List<File> files = fileRepository.findByBranch_UniqueId(file.getBranch().getUniqueId());
-        Long lastVersion = 0L;
-        for (File f : files) {
-            if (f.getName().equals(file.getName())) {
-                if (lastVersion < Long.parseLong(f.getVersion())) {
-                    lastVersion = Long.parseLong(f.getVersion());
-                }
-            }
-        }
-
-        return String.valueOf(lastVersion + 1);
-    }
-
-    private String extractFileId(WebSocketSession session) {
-        return session.getUri().getPath().split("/")[3];  // Extract fileId from the WebSocket URL
-    }
+    //  !   ///////////////////////////////////////////////////////////////
 }
