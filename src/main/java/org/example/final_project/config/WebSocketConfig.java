@@ -18,6 +18,6 @@ public class WebSocketConfig implements WebSocketConfigurer {
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
         registry.addHandler(webSocketService, "/ws/file/*")
                 .setAllowedOrigins("*")
-                .addInterceptors(webSocketService);  // Add the HandshakeInterceptor
+                .addInterceptors(webSocketService);
     }
 }

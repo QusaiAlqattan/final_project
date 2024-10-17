@@ -89,15 +89,15 @@ public class WebSocketService extends TextWebSocketHandler implements HandshakeI
     @Override
     public void afterHandshake(ServerHttpRequest request, ServerHttpResponse response,
                                WebSocketHandler wsHandler, Exception exception) {
-        // You can handle post-handshake actions if needed
     }
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
         lock.lock();
-        String fileId = extractFileId(session); // Extract the file ID from the URL
+        String fileId = extractFileId(session);
         fileSessions.computeIfAbsent(fileId, k -> new CopyOnWriteArrayList<>()).add(session);
         String content = fileService.getFileContent(Long.parseLong(fileId));
+
         // Send the current file content to the newly connected session
         if (!fileContents.containsKey(fileId)) {
             if (content != null && content.length() > 0) {
@@ -107,6 +107,7 @@ public class WebSocketService extends TextWebSocketHandler implements HandshakeI
         }else {
             session.sendMessage(new TextMessage(fileContents.get(fileId)));
         }
+
         lock.unlock();
     }
 
