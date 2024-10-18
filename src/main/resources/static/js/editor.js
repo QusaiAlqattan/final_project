@@ -13,7 +13,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 notesSection.innerHTML = '';
 
                 notes.forEach(note => {
-                    console.log(note)
                     const noteElement = document.createElement("div");
                     noteElement.classList.add("note");
                     noteElement.innerHTML = `

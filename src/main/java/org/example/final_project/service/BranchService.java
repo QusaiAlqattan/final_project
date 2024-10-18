@@ -259,6 +259,10 @@ public class BranchService {
         newFile.setVersion(sourceFile.getVersion());
         newFile.setTimestamp(sourceFile.getTimestamp());
         newFile.setBranch(destinationBranch);
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        newFile.setCreator(systemUserRepository.findByUsername(auth.getName()));
+
         fileRepository.save(newFile);
 
         return newFile;
@@ -269,8 +273,11 @@ public class BranchService {
         File newFile = new File();
         newFile.setName(newName);
         newFile.setContent(sourceFile.getContent());
-        newFile.setVersion("1");
+        newFile.setVersion(sourceFile.getVersion());
         newFile.setTimestamp(sourceFile.getTimestamp());
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        newFile.setCreator(systemUserRepository.findByUsername(auth.getName()));
 
         Branch destinationBranch = destinationFile.getBranch();
         newFile.setBranch(destinationBranch);

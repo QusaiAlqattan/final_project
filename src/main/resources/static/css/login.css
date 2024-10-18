@@ -102,15 +102,11 @@ input[type="password"]:focus {
 }
 
 .github-btn {
-    background-color: #333;
+    background-color: rgb(27, 31, 35);
     color: white;
     display: inline-block;
     padding: 10px;
     border-radius: 4px;
     text-decoration: none;
     transition: background-color 0.3s;
-}
-
-.github-btn:hover {
-    background-color: #444;
 }

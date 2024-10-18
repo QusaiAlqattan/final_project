@@ -3,16 +3,12 @@ package org.example.final_project.service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.example.final_project.dto.FileDTO;
-import org.example.final_project.model.Branch;
 import org.example.final_project.model.File;
-import org.example.final_project.model.Folder;
-import org.example.final_project.model.SystemUser;
 import org.example.final_project.repository.BranchRepository;
 import org.example.final_project.repository.FileRepository;
 import org.example.final_project.repository.FolderRepository;
 import org.example.final_project.repository.SystemUserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.http.server.ServerHttpResponse;
 import org.springframework.security.core.Authentication;
@@ -54,6 +50,9 @@ public class WebSocketService extends TextWebSocketHandler implements HandshakeI
     @Autowired
     private SystemUserRepository systemUserRepository;
 
+    @Autowired
+    private FileService fileService;
+
     private final ReentrantLock  lock = new ReentrantLock();
 
     private int offset = 0;
@@ -66,25 +65,18 @@ public class WebSocketService extends TextWebSocketHandler implements HandshakeI
     // Store active WebSocket connections per fileId
     private ConcurrentHashMap<String, CopyOnWriteArrayList<WebSocketSession>> fileSessions = new ConcurrentHashMap<>();
 
-    private static ConcurrentHashMap<String, String> fileLocks = new ConcurrentHashMap<>();
-    @Autowired
-    private FileService fileService;
-
     //  !   ///////////////////////////////////////////////////////////////
     //  !   built in methods
     //  !   ///////////////////////////////////////////////////////////////
     @Override
     public boolean beforeHandshake(ServerHttpRequest request, ServerHttpResponse response,
-                                   WebSocketHandler wsHandler, Map<String, Object> attributes) {
-        // Extract the current Authentication from SecurityContextHolder
+                                   WebSocketHandler wsHandler, Map<String, Object> attributes) throws Exception {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null) {
-            // Store the Authentication object in the session attributes
-            attributes.put("auth", authentication);
-        }
+        attributes.put("auth", authentication);
 
         return true;
     }
+
 
     @Override
     public void afterHandshake(ServerHttpRequest request, ServerHttpResponse response,
@@ -94,6 +86,7 @@ public class WebSocketService extends TextWebSocketHandler implements HandshakeI
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
         lock.lock();
+
         String fileId = extractFileId(session);
         fileSessions.computeIfAbsent(fileId, k -> new CopyOnWriteArrayList<>()).add(session);
         String content = fileService.getFileContent(Long.parseLong(fileId));
@@ -115,8 +108,6 @@ public class WebSocketService extends TextWebSocketHandler implements HandshakeI
     protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
         lock.lock();
         try {
-            System.out.println("handleTextMessage");
-
             String fileId = extractFileId(session); // Extract the file ID from the URL
 
             // Store the latest file content
@@ -131,18 +122,14 @@ public class WebSocketService extends TextWebSocketHandler implements HandshakeI
             // Broadcast the changes to all other clients connected to the same file
             for (WebSocketSession s : fileSessions.getOrDefault(fileId, new CopyOnWriteArrayList<>())) {
                 if (s.isOpen()) {
-                    s.sendMessage(newMessage);  // Send updated content to other clients
+                    s.sendMessage(newMessage);
                 }
             }
 
             // Check if there are any waiting threads
-            System.out.println("before: " + fileContents.get(fileId));
             if (!lock.hasQueuedThreads()) {
-                System.out.println("lock has queued");
-                System.out.println("offset: " + offset);
                 offset = 0;
             }
-            System.out.println("after: " + fileContents.get(fileId));
         } finally {
             lock.unlock();  // Always unlock, even if an exception occurs
         }
@@ -151,8 +138,7 @@ public class WebSocketService extends TextWebSocketHandler implements HandshakeI
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
         lock.lock();
-        System.out.println("afterConnectionClosed");
-        String fileId = extractFileId(session); // Extract the file ID from the URL
+        String fileId = extractFileId(session);
         CopyOnWriteArrayList<WebSocketSession> sessions = fileSessions.get(fileId);
 
         if (sessions != null) {
@@ -160,8 +146,7 @@ public class WebSocketService extends TextWebSocketHandler implements HandshakeI
 
             // If no more sessions are left, clear unsaved changes
             if (sessions.isEmpty()) {
-                System.out.println("remove");
-                fileSessions.remove(fileId); // Optionally remove the entry for the fileId
+                fileSessions.remove(fileId); // Remove the session for the fileId
                 fileContents.remove(fileId);  // Remove unsaved changes for the file
             }
         }
@@ -236,11 +221,6 @@ public class WebSocketService extends TextWebSocketHandler implements HandshakeI
             }
 
         } catch (Exception e) {
-            System.out.println("offset: " + offset);
-            System.out.println("actual position: " + actualPosition);
-            System.out.println("content: " + originalContent);
-            System.out.println("position: " + position);
-            System.out.println("value: " + value);
             e.printStackTrace();
         }
         return "oops!!!, something when wrong";
