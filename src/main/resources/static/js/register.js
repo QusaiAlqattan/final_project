@@ -11,7 +11,7 @@ document.getElementById('registrationForm').addEventListener('submit', async fun
     };
 
     // Send POST request to create a new user
-    const response = await fetch('/api/users', {
+    const response = await fetch('/register', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

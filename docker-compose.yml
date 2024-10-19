@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "8080:8080"  # Expose port 8080
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock  # Mount the Docker socket to allow Docker access
+      - code-data:/app/codes  # Persist code files in a mounted volume
+    environment:
+      - CODE_BASE_DIR=/app/codes  # Define the base directory for code storage
+    depends_on:
+      - db
+
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: 12345  # Set the root password for MySQL
+      MYSQL_DATABASE: mydb         # Create a database
+#    ports:
+#      - "3306:3306"  # Expose MySQL port
+    volumes:
+      - db-data:/var/lib/mysql  # Persist MySQL data using Docker volumes
+
+volumes:
+  db-data:  # Volume for MySQL data persistence
+  code-data:  # Volume for storing the user code files

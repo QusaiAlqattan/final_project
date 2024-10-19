@@ -33,8 +33,8 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(authz -> authz
-                        .requestMatchers("/register", "/login", "js/**", "css/**", "img/**", "/ws/**").permitAll()
-                        .requestMatchers("/branches/**", "/branch-detail/**", "/file/**", "/api/**", "/run-code", "/oauth2/authorization/github").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers("/register", "/login", "/oauth2/authorization/github", "js/**", "css/**", "img/**", "/ws/**").permitAll()
+                        .requestMatchers("/branches/**", "/branch-detail/**", "/file/**", "/api/**", "/run-code").hasAnyRole("USER", "ADMIN")
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )

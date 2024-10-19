@@ -15,8 +15,8 @@ public class DockerService {
             String dockerImage;
             String command;
 
-            // Define the base filename and directory
-            Path baseDir = Paths.get("C:\\Users\\LP_Qusai\\OneDrive - Leading Point Software LTD\\Desktop\\learn\\atypon(ongoing)\\final_project\\codes");
+            // Define the base directory for code storage (shared between containers)
+            Path baseDir = Paths.get("/app/codes");
             Files.createDirectories(baseDir); // Ensure the directory exists
 
             // Determine the appropriate filename and Docker image
@@ -26,26 +26,34 @@ public class DockerService {
                 filename = baseDir.resolve("Main.java");
                 // Save the code to a file
                 Files.writeString(filename, code);
-                command = "javac /code/Main.java && java -cp /code Main";
+                command = "javac /app/codes/Main.java && java -cp /app/codes Main";
             } else if (language.equalsIgnoreCase("javascript")) {
                 dockerImage = "node:14";
                 filename = baseDir.resolve("script.js");
                 // Save the code to a file
                 Files.writeString(filename, code);
-                command = "node /code/script.js";
+                command = "node /app/codes/script.js";
             } else if (language.equalsIgnoreCase("python")) {
                 dockerImage = "python";
                 filename = baseDir.resolve("script.py");
                 // Save the code to a file
                 Files.writeString(filename, code);
-                command = "python /code/script.py";
+                command = "python /app/codes/script.py";
             } else {
                 return "Unsupported language";
             }
 
-            // Run the Docker container with the appropriate command
-            ProcessBuilder processBuilder = new ProcessBuilder("docker", "run", "--rm", "-v",
-                    baseDir.toAbsolutePath() + ":/code", dockerImage, "bash", "-c", command);
+            // Run the Docker container with the appropriate command, using `--volumes-from`
+            ProcessBuilder processBuilder = new ProcessBuilder(
+                    "docker",
+                    "run",
+                    "--rm",
+                    "--volumes-from", "final_project_code-app-1", // Share the volume from the Spring Boot container
+                    dockerImage,
+                    "bash",
+                    "-c",
+                    command
+            );
             Process process = processBuilder.start();
 
             // Capture the output
@@ -65,7 +73,7 @@ public class DockerService {
                 errorOutput.append(line).append("\n");
             }
 
-            // Wait for process to complete
+            // Wait for the process to complete
             process.waitFor();
 
             // If there is error output, return that instead
