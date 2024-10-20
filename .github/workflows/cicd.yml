@@ -26,7 +26,7 @@ jobs:
 
       # Step 3: Compile Java projects without tests
       - name: Compile Java projects
-        run: mvn package -Dmaven.test.skip -f final_project/pom.xml
+        run: mvn package -Dmaven.test.skip -f pom.xml
 
       # Log in to DockerHub (Optional: remove if not pushing to DockerHub)
       - name: Log in to DockerHub
