@@ -3,6 +3,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const runButton = document.getElementById("run-btn");
     const outputElement = document.getElementById("output");
     const languageSelect = document.getElementById("language");
+    const fileId = window.location.pathname.split("/").pop();
 
     runButton.addEventListener('click', function() {
         const code = editor.value;
@@ -13,7 +14,7 @@ document.addEventListener("DOMContentLoaded", function () {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ code, language })
+            body: JSON.stringify({ code, language, fileId })
         })
             .then(response => response.json())
             .then(data => {

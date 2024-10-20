@@ -16,8 +16,9 @@ public class RESTCodeExecutionController {
     public Map<String, String> runCode(@RequestBody Map<String, String> payload) {
         String code = payload.get("code");
         String language = payload.get("language");
+        String fileId = payload.get("fileId");
 
-        String output = dockerService.runCodeInDocker(code, language);
+        String output = dockerService.runCodeInDocker(code, language, fileId);
         return Map.of("output", output);
     }
 }

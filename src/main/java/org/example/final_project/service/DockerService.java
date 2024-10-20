@@ -1,16 +1,24 @@
 package org.example.final_project.service;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.concurrent.locks.ReentrantLock;
 
 @Service
 public class DockerService {
 
-    public String runCodeInDocker(String code, String language) {
+    @Autowired
+    private ContainerManager containerManager;
+
+    private final ReentrantLock lock = new ReentrantLock();
+
+    public String runCodeInDocker(String code, String language, String fileId) {
+        lock.lock();
         try {
             String dockerImage;
             String command;
@@ -43,17 +51,18 @@ public class DockerService {
                 return "Unsupported language";
             }
 
-            // Run the Docker container with the appropriate command, using `--volumes-from`
-            ProcessBuilder processBuilder = new ProcessBuilder(
-                    "docker",
-                    "run",
-                    "--rm",
-                    "--volumes-from", "final_project_code-app-1", // Share the volume from the Spring Boot container
-                    dockerImage,
-                    "bash",
-                    "-c",
-                    command
-            );
+            String containerName = dockerImage.replace(":", "") + fileId;
+
+            // Start the container if not already running and run command
+            containerManager.startContainer(containerName, dockerImage);
+
+            // Wait until the container is running
+            while (!isContainerRunning(containerName)) {
+                Thread.sleep(1000); // Check every second
+            }
+
+            // Now execute the command
+            ProcessBuilder processBuilder = new ProcessBuilder("docker", "exec", containerName, "bash", "-c", command);
             Process process = processBuilder.start();
 
             // Capture the output
@@ -85,6 +94,18 @@ public class DockerService {
         } catch (Exception e) {
             e.printStackTrace();
             return "Error running the code: " + e.getMessage();
+        }finally {
+            lock.unlock();
         }
     }
+
+    private boolean isContainerRunning(String containerName) throws Exception {
+        ProcessBuilder processBuilder = new ProcessBuilder("docker", "inspect", "-f", "{{.State.Running}}", containerName);
+        Process process = processBuilder.start();
+
+        BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+        String line = reader.readLine();
+        return "true".equals(line);
+    }
+
 }

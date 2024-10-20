@@ -8,8 +8,8 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock  # Mount the Docker socket to allow Docker access
       - code-data:/app/codes  # Persist code files in a mounted volume
-    environment:
-      - CODE_BASE_DIR=/app/codes  # Define the base directory for code storage
+#    environment:
+#      - CODE_BASE_DIR=/app/codes  # Define the base directory for code storage
     depends_on:
       - db
 
