@@ -45,12 +45,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install docker-compose -y
 
-      # Step 7: Build the Docker image for the app service
+      # Step 7: Build and push Docker images with Docker Compose
       - name: Build app service image
         run: |
           docker-compose -f docker-compose.yml build
-
-      # Step 8: Push the Docker image to DockerHub
-      - name: Push app service image
-        run: |
           docker-compose -f docker-compose.yml push
