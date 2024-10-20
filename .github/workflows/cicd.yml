@@ -53,4 +53,4 @@ jobs:
       # Step 8: Push the Docker image to DockerHub
       - name: Push app service image
         run: |
-          docker-compose -f docker-compose.yml push --verbose # Add verbose output
+          docker-compose -f docker-compose.yml app  push --verbose # Add verbose output
