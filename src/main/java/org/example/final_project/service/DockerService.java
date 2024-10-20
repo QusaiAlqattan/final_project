@@ -30,11 +30,13 @@ public class DockerService {
             // Determine the appropriate filename and Docker image
             Path filename;
             if (language.equalsIgnoreCase("java")) {
-                dockerImage = "openjdk:11";
+                dockerImage = "openjdk:22";
                 filename = baseDir.resolve("Main.java");
                 // Save the code to a file
                 Files.writeString(filename, code);
-                command = "javac /app/codes/Main.java && java -cp /app/codes Main";
+
+                // Use a separate writable directory for .class files
+                command = "mkdir -p /app/com && javac -d /app/com /app/codes/Main.java && java -cp /app/com Main";
             } else if (language.equalsIgnoreCase("javascript")) {
                 dockerImage = "node:14";
                 filename = baseDir.resolve("script.js");
