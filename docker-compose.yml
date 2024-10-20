@@ -3,6 +3,7 @@ version: '3.8'
 services:
   app:
     build: .
+    image: qusaialqattan/app:latest
     ports:
       - "8080:8080"  # Expose port 8080
     volumes:
