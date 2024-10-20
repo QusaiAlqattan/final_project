@@ -23,7 +23,7 @@ public class ContainerManager {
                     "docker",
                     "run",
                     "--name", containerName, // Give the container a name
-                    "--volumes-from", "final_project_code-app-1", // Share the volume from the Spring Boot container
+                    "--volumes-from", "final_project_code-app-1:ro", // Share the volume from the Spring Boot container
                     imageName,
                     "tail",
                     "-f",
