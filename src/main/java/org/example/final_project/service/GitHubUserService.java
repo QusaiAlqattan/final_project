@@ -24,15 +24,28 @@ public class GitHubUserService {
         String username = oauth2User.getAttribute("login");
         Integer githubID = oauth2User.getAttribute("id");
 
-        Role role = roleRepository.findByName("USER");
         SystemUser user = systemUserRepository.findByUsername(username);
         if (user == null) {
             user = new SystemUser();
             user.setUsername(username);
-            user.setRole(role); // Default role
             user.setGithubID(githubID);
-            systemUserRepository.save(user);
         }
+
+        if (roleRepository.findByName("USER") != null){
+            user.setRole(roleRepository.findByName("USER"));
+        }else{
+            Role User = new Role();
+            User.setName("USER");
+            roleRepository.save(User);
+
+            Role Admin = new Role();
+            Admin.setName("ADMIN");
+            roleRepository.save(Admin);
+
+            user.setRole(User);
+        }
+        systemUserRepository.save(user);
+
         return user;
     }
 }

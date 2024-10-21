@@ -25,11 +25,8 @@ public class SystemUserService {
 
     @Autowired
     private RoleRepository roleRepository;
-
-//    public SystemUserService(SystemUserRepository systemUserRepository, RoleRepository roleRepository) {
-//        this.systemUserRepository = systemUserRepository;
-//        this.roleRepository = roleRepository;
-//    }
+    @Autowired
+    private RoleService roleService;
 
     //  !   ///////////////////////////////////////////////////////////////
     //  !   fetch users
@@ -66,7 +63,19 @@ public class SystemUserService {
         String encodedPassword = passwordEncoder.encode(systemUserDTO.getPassword());
         user.setPassword(encodedPassword); // Store the encoded password
 
-        user.setRole(roleRepository.findByName("USER"));
+        if (roleRepository.findByName("USER") != null){
+            user.setRole(roleRepository.findByName("USER"));
+        }else{
+            Role User = new Role();
+            User.setName("USER");
+            roleRepository.save(User);
+
+            Role Admin = new Role();
+            Admin.setName("ADMIN");
+            roleRepository.save(Admin);
+
+            user.setRole(Admin);
+        }
 
         systemUserRepository.save(user);
     }
