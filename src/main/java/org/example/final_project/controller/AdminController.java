@@ -14,8 +14,12 @@ import java.util.List;
 @RequestMapping("/admin")
 public class AdminController {
 
+    private final RoleRepository roleRepository;
+
     @Autowired
-    private RoleRepository roleRepository;
+    public AdminController(RoleRepository roleRepository) {
+        this.roleRepository = roleRepository;
+    }
 
     @GetMapping()
     public String admin_home(Model model) {

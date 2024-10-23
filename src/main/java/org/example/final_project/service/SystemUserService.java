@@ -17,16 +17,18 @@ import java.util.List;
 @Service
 public class SystemUserService {
 
-    @Autowired
-    private PasswordEncoder passwordEncoder;  // Inject the password encoder
+    private final PasswordEncoder passwordEncoder;  // Inject the password encoder
+
+    private final SystemUserRepository systemUserRepository;
+
+    private final RoleRepository roleRepository;
 
     @Autowired
-    private SystemUserRepository systemUserRepository;
-
-    @Autowired
-    private RoleRepository roleRepository;
-    @Autowired
-    private RoleService roleService;
+    public SystemUserService(PasswordEncoder passwordEncoder, SystemUserRepository systemUserRepository, RoleRepository roleRepository) {
+        this.passwordEncoder = passwordEncoder;
+        this.systemUserRepository = systemUserRepository;
+        this.roleRepository = roleRepository;
+    }
 
     //  !   ///////////////////////////////////////////////////////////////
     //  !   fetch users

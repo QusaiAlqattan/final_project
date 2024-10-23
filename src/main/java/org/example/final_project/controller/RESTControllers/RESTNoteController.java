@@ -14,15 +14,9 @@ import java.util.List;
 @RequestMapping("/api")
 public class RESTNoteController {
 
-    private final NoteRepository noteRepository;
-    private final FileRepository fileRepository;
-    private final SystemUserRepository systemUserRepository;
     private final NoteService noteService;
 
-    public RESTNoteController(NoteRepository noteRepository, FileRepository fileRepository, SystemUserRepository systemUserRepository, NoteService noteService) {
-        this.noteRepository = noteRepository;
-        this.fileRepository = fileRepository;
-        this.systemUserRepository = systemUserRepository;
+    public RESTNoteController( NoteService noteService) {
         this.noteService = noteService;
     }
 

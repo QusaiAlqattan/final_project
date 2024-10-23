@@ -15,14 +15,10 @@ import java.util.List;
 @RequestMapping("/api/folders")
 public class RESTFolderController {
 
-    private final FolderRepository folderRepository;
-    private final BranchRepository branchRepository;
     private final FolderService folderService;
 
     @Autowired
-    public RESTFolderController(FolderRepository folderRepository, BranchRepository branchRepository, FolderService folderService) {
-        this.folderRepository = folderRepository;
-        this.branchRepository = branchRepository;
+    public RESTFolderController( FolderService folderService) {
         this.folderService = folderService;
     }
 

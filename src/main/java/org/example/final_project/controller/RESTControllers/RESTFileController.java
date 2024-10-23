@@ -16,19 +16,10 @@ import java.util.List;
 @RequestMapping("/api/files")
 public class RESTFileController {
 
-    private final FileRepository fileRepository;
-    private final FolderRepository folderRepository;
-    private final BranchRepository branchRepository;
     private final FileService fileService;
 
     @Autowired
-    public RESTFileController(FileRepository fileRepository,
-                              FolderRepository folderRepository,
-                              BranchRepository branchRepository,
-                              FileService fileService) {
-        this.fileRepository = fileRepository;
-        this.folderRepository = folderRepository;
-        this.branchRepository = branchRepository;
+    public RESTFileController(FileService fileService) {
         this.fileService = fileService;
     }
 

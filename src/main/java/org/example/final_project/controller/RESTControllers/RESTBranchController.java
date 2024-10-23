@@ -14,8 +14,12 @@ import java.util.Map;
 @RequestMapping("/api/branches")
 public class RESTBranchController {
 
+    private final BranchService branchService;
+
     @Autowired
-    private BranchService branchService;
+    public RESTBranchController(BranchService branchService){
+        this.branchService = branchService;
+    }
 
     @GetMapping
     public ResponseEntity<List<BranchDTO>> getAllBranches() {

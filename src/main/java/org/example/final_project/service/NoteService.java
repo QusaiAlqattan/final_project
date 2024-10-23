@@ -8,6 +8,7 @@ import org.example.final_project.model.SystemUser;
 import org.example.final_project.repository.FileRepository;
 import org.example.final_project.repository.NoteRepository;
 import org.example.final_project.repository.SystemUserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -24,6 +25,7 @@ public class NoteService {
     private final FileRepository fileRepository;
     private final NoteRepository noteRepository;
 
+    @Autowired
     public NoteService(SystemUserRepository systemUserRepository, FileRepository fileRepository, NoteRepository noteRepository) {
         this.systemUserRepository = systemUserRepository;
         this.fileRepository = fileRepository;

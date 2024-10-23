@@ -9,8 +9,12 @@ import java.util.Map;
 @RestController
 public class RESTCodeExecutionController {
 
+    private final DockerService dockerService;
+
     @Autowired
-    private DockerService dockerService;
+    public RESTCodeExecutionController(DockerService dockerService){
+        this.dockerService = dockerService;
+    }
 
     @PostMapping("/run-code")
     public Map<String, String> runCode(@RequestBody Map<String, String> payload) {

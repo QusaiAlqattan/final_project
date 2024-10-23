@@ -20,17 +20,15 @@ import java.util.Map;
 @RequestMapping("/api")
 public class RESTWebSocketController {
 
-    @Autowired
-    private RoleRepository roleRepository;
+    private final FileRepository fileRepository;
+
+    private final WebSocketService webSocketService;
 
     @Autowired
-    private FileService fileService;
-
-    @Autowired
-    private FileRepository fileRepository;
-
-    @Autowired
-    private WebSocketService webSocketService;
+    public RESTWebSocketController(FileRepository fileRepository, WebSocketService webSocketService) {
+        this.fileRepository = fileRepository;
+        this.webSocketService = webSocketService;
+    }
 
     @PostMapping("/save/{fileId}")
     public ResponseEntity<String> saveFile(@PathVariable String fileId, @RequestBody String content) {

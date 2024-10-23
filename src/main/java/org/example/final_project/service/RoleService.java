@@ -3,6 +3,7 @@ package org.example.final_project.service;
 import org.example.final_project.dto.RoleDTO;
 import org.example.final_project.model.Role;
 import org.example.final_project.repository.RoleRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -11,8 +12,9 @@ import java.util.List;
 @Service
 public class RoleService {
 
-    private RoleRepository roleRepository;
+    private final RoleRepository roleRepository;
 
+    @Autowired
     public RoleService(RoleRepository roleRepository) {
         this.roleRepository = roleRepository;
     }

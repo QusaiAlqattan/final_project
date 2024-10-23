@@ -14,8 +14,12 @@ import java.util.List;
 @RequestMapping("/admin/api/roles")
 public class RESTRoleController {
 
+    private final RoleService roleService;
+
     @Autowired
-    private RoleService roleService;
+    public RESTRoleController(RoleService roleService) {
+        this.roleService = roleService;
+    }
 
     // Endpoint to fetch all roles
     @GetMapping

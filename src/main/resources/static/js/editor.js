@@ -29,12 +29,45 @@ document.addEventListener("DOMContentLoaded", function () {
 
     loadNotes();
 
+    function updateText(value, length, position, type){
+        let currentValue = editor.value;
+        if (position < 0 || length < 0) {
+            throw new Error("Invalid start position or length");
+        }
+
+        if (type === 'Insert'){
+            let before = currentValue.slice(0, position);
+            let after = currentValue.slice(position);
+
+            editor.value = before + value + after;
+        }else{
+            if (value.length === 0){
+                editor.value = '';
+            }else{
+                // Calculate the end position of the substring to be removed
+                let endPosition = position + length;
+
+                // Slice before and after the substring and concatenate the result
+                const before = currentValue.slice(0, position);
+                const after = currentValue.slice(endPosition);
+
+                editor.value = before + after;
+            }
+        }
+        oldContent = editor.value;
+    }
+
     socket.onmessage = function (event) {
         try {
-            let data = event.data;
-            if (data.length >= 0) {
-                editor.value = data;
-                oldContent = data;
+            let data = JSON.parse(event.data);
+            console.log(data)
+            if (data.type.length >= 0) {
+                if (data.fullContent){
+                    editor.value = data.value;
+                    oldContent = data.value;
+                }else{
+                    updateText(data.value, data.length, data.position, data.type);
+                }
             } else {
                 console.error('Content not found in received data');
             }
@@ -56,10 +89,10 @@ document.addEventListener("DOMContentLoaded", function () {
             startPosition = startPosition - offset;
         }
 
-        console.log('startPosition', startPosition)
-        console.log('value', value)
-        console.log('type', type)
-        console.log('offset', offset)
+        console.log('position: ', startPosition)
+        console.log('value: ', value)
+        console.log('type: ', type)
+        console.log('offset: ', offset)
 
         socket.send(JSON.stringify({
             content: value,
@@ -67,9 +100,11 @@ document.addEventListener("DOMContentLoaded", function () {
             offset: offset,
             position: startPosition
         }));
+
+        oldContent = editor.value;
     });
 
-    function findExtraSubstring(str1, str2, startPosition, endPosition) {
+    function findExtraSubstring(str1, str2) {
         let longer = str1.length > str2.length ? str1 : str2;
         let shorter = str1.length <= str2.length ? str1 : str2;
         let delta = longer.length - shorter.length;

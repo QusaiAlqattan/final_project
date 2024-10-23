@@ -2,7 +2,6 @@ package org.example.final_project.config;
 
 import org.example.final_project.service.SystemUserDetailService;
 import org.example.final_project.service.CustomOAuth2UserService;
-import org.example.final_project.service.GitHubUserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,11 +20,16 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableWebSecurity
 public class SecurityConfig {
 
-    @Autowired
-    private SystemUserDetailService systemUserDetailService;
+    private final SystemUserDetailService systemUserDetailService;
+
+    private final CustomOAuth2UserService customOAuth2UserService;
 
     @Autowired
-    private CustomOAuth2UserService customOAuth2UserService;
+    public SecurityConfig(SystemUserDetailService systemUserDetailService,
+                          CustomOAuth2UserService customOAuth2UserService) {
+        this.systemUserDetailService = systemUserDetailService;
+        this.customOAuth2UserService = customOAuth2UserService;
+    }
 
     // Define the security filter chain
     @Bean

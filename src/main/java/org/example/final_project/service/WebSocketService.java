@@ -1,9 +1,11 @@
 package org.example.final_project.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.example.final_project.dto.FileDTO;
 import org.example.final_project.model.File;
+import org.example.final_project.model.Message;
 import org.example.final_project.repository.BranchRepository;
 import org.example.final_project.repository.FileRepository;
 import org.example.final_project.repository.FolderRepository;
@@ -20,6 +22,7 @@ import org.springframework.web.socket.handler.TextWebSocketHandler;
 
 import static org.example.final_project.service.util.WebSocketServiceUtil.*;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -38,24 +41,15 @@ import java.util.Map;
 @Service
 public class WebSocketService extends TextWebSocketHandler implements HandshakeInterceptor {
 
-    @Autowired
-    private FileRepository fileRepository;
+    private final FileRepository fileRepository;
 
-    @Autowired
-    private FolderRepository folderRepository;
-
-    @Autowired
-    private BranchRepository branchRepository;
-
-    @Autowired
-    private SystemUserRepository systemUserRepository;
-
-    @Autowired
-    private FileService fileService;
+    private final FileService fileService;
 
     private final ReentrantLock  lock = new ReentrantLock();
 
     private int offset = 0;
+
+    private boolean isMultithread = false;
 
     private int prevPosition = 0;
 
@@ -65,12 +59,18 @@ public class WebSocketService extends TextWebSocketHandler implements HandshakeI
     // Store active WebSocket connections per fileId
     private ConcurrentHashMap<String, CopyOnWriteArrayList<WebSocketSession>> fileSessions = new ConcurrentHashMap<>();
 
+    @Autowired
+    public WebSocketService (FileRepository fileRepository, FileService fileService){
+        this.fileRepository = fileRepository;
+        this.fileService = fileService;
+    }
+
     //  !   ///////////////////////////////////////////////////////////////
     //  !   built in methods
     //  !   ///////////////////////////////////////////////////////////////
     @Override
     public boolean beforeHandshake(ServerHttpRequest request, ServerHttpResponse response,
-                                   WebSocketHandler wsHandler, Map<String, Object> attributes) throws Exception {
+                                   WebSocketHandler wsHandler, Map<String, Object> attributes) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         attributes.put("auth", authentication);
 
@@ -117,18 +117,12 @@ public class WebSocketService extends TextWebSocketHandler implements HandshakeI
                 fileContents.put(fileId, updateContent(message, ""));
             }
 
-            TextMessage newMessage = new TextMessage(fileContents.get(fileId));
-
-            // Broadcast the changes to all other clients connected to the same file
-            for (WebSocketSession s : fileSessions.getOrDefault(fileId, new CopyOnWriteArrayList<>())) {
-                if (s.isOpen()) {
-                    s.sendMessage(newMessage);
-                }
-            }
-
             // Check if there are any waiting threads
             if (!lock.hasQueuedThreads()) {
                 offset = 0;
+                broadcast(session, message, fileId);
+            }else{
+                isMultithread = true;
             }
         } finally {
             lock.unlock();  // Always unlock, even if an exception occurs
@@ -159,6 +153,46 @@ public class WebSocketService extends TextWebSocketHandler implements HandshakeI
     //  !   ///////////////////////////////////////////////////////////////
     //  !   custom methods
     //  !   ///////////////////////////////////////////////////////////////
+    private void broadcast(WebSocketSession session, TextMessage message, String fileId) throws IOException {
+        if (isMultithread) {
+            // broadcast all content
+            ObjectMapper newMessageMapper = new ObjectMapper();
+            Message newMessageObj = new Message(fileContents.get(fileId), "", 0, 0, isMultithread);
+            String newMessageJson = newMessageMapper.writeValueAsString(newMessageObj);
+            TextMessage newMessage = new TextMessage(newMessageJson);
+
+            for (WebSocketSession s : fileSessions.getOrDefault(fileId, new CopyOnWriteArrayList<>())) {
+                if (s.isOpen()) {
+                    s.sendMessage(newMessage);
+                }
+            }
+        }else {
+            // Broadcast only the changes to all other clients connected to the same file
+            ObjectMapper objectMapper = new ObjectMapper();
+            // Parse the JSON string into a JsonNode
+            HashMap<String, Object> map = objectMapper.readValue(message.getPayload(), new TypeReference<HashMap<String, Object>>() {});
+            String value = (String) map.get("content");
+            String type = (String) map.get("type");
+            int length = (Integer) map.get("offset");
+
+            ObjectMapper newMessageMapper = new ObjectMapper();
+            Message newMessageObj = new Message(value, type, length, prevPosition, isMultithread);
+            String newMessageJson = newMessageMapper.writeValueAsString(newMessageObj);
+
+            for (WebSocketSession s : fileSessions.getOrDefault(fileId, new CopyOnWriteArrayList<>())) {
+                if (s.isOpen()) {
+                    if ( !s.getId().equals(session.getId())) {
+                        TextMessage newMessage = new TextMessage(newMessageJson);
+                        s.sendMessage(newMessage);
+                    }
+                }
+            }
+        }
+
+        // reset flag value
+        isMultithread = false;
+    }
+
     private String updateContent(TextMessage message, String originalContent){
         int position = 0;
         int actualPosition = 0;
@@ -172,8 +206,6 @@ public class WebSocketService extends TextWebSocketHandler implements HandshakeI
             String type = (String) map.get("type");
             position = (Integer) map.get("position");
             actualPosition = position + offset;
-
-
 
             StringBuilder stringBuilder = new StringBuilder(originalContent);
 
@@ -197,26 +229,33 @@ public class WebSocketService extends TextWebSocketHandler implements HandshakeI
                 offset += tempOffset;
                 return stringBuilder.toString();
             }else{
-                if (offset != 0) {
-                    if (actualPosition >= prevPosition) {
-                        // i do care about the offset
-                        String output = removeSubstring(originalContent, actualPosition, tempOffset, offset);
-                        offset -= tempOffset;
-                        prevPosition = actualPosition;
-                        return output;
-                    } else {
+                if(tempOffset == 0){
+                    // select all + delete
+                    offset = 0;
+                    prevPosition = 0;
+                    return "";
+                }else{
+                    if (offset != 0) {
+                        if (actualPosition >= prevPosition) {
+                            // i do care about the offset
+                            String output = removeSubstring(originalContent, actualPosition, tempOffset, offset);
+                            offset -= tempOffset;
+                            prevPosition = actualPosition;
+                            return output;
+                        } else {
+                            // dont care about the offset
+                            String output = removeSubstring(originalContent, position, tempOffset, offset);
+                            offset -= tempOffset;
+                            prevPosition = position;
+                            return output;
+                        }
+                    }else {
                         // dont care about the offset
                         String output = removeSubstring(originalContent, position, tempOffset, offset);
                         offset -= tempOffset;
                         prevPosition = position;
                         return output;
                     }
-                }else {
-                    // dont care about the offset
-                    String output = removeSubstring(originalContent, position, tempOffset, offset);
-                    offset -= tempOffset;
-                    prevPosition = position;
-                    return output;
                 }
             }
 
