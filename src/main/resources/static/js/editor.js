@@ -41,9 +41,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
             editor.value = before + value + after;
         }else{
-            if (value.length === 0){
-                editor.value = '';
-            }else{
+            // if (value.length === 0){
+            //     editor.value = '';
+            // }else{
                 // Calculate the end position of the substring to be removed
                 let endPosition = position + length;
 
@@ -52,7 +52,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 const after = currentValue.slice(endPosition);
 
                 editor.value = before + after;
-            }
+            // }
         }
         oldContent = editor.value;
     }
@@ -88,6 +88,9 @@ document.addEventListener("DOMContentLoaded", function () {
             type = 'Insert';
             startPosition = startPosition - offset;
         }
+
+        console.log('newData: ', newData);
+        console.log('oldContent: ', oldContent)
 
         console.log('position: ', startPosition)
         console.log('value: ', value)

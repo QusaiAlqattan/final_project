@@ -59,6 +59,8 @@ public class WebSocketService extends TextWebSocketHandler implements HandshakeI
     // Store active WebSocket connections per fileId
     private ConcurrentHashMap<String, CopyOnWriteArrayList<WebSocketSession>> fileSessions = new ConcurrentHashMap<>();
 
+    private final ObjectMapper OBJECT_MAPPER  = new ObjectMapper();
+
     @Autowired
     public WebSocketService (FileRepository fileRepository, FileService fileService){
         this.fileRepository = fileRepository;
@@ -87,19 +89,12 @@ public class WebSocketService extends TextWebSocketHandler implements HandshakeI
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
         lock.lock();
 
+        // add session
         String fileId = extractFileId(session);
         fileSessions.computeIfAbsent(fileId, k -> new CopyOnWriteArrayList<>()).add(session);
-        String content = fileService.getFileContent(Long.parseLong(fileId));
 
         // Send the current file content to the newly connected session
-        if (!fileContents.containsKey(fileId)) {
-            if (content != null && content.length() > 0) {
-                fileContents.put(fileId, content);
-                session.sendMessage(new TextMessage(fileContents.get(fileId)));
-            }
-        }else {
-            session.sendMessage(new TextMessage(fileContents.get(fileId)));
-        }
+        sendInitContent(session, fileId);
 
         lock.unlock();
     }
@@ -153,12 +148,30 @@ public class WebSocketService extends TextWebSocketHandler implements HandshakeI
     //  !   ///////////////////////////////////////////////////////////////
     //  !   custom methods
     //  !   ///////////////////////////////////////////////////////////////
+    private void sendInitContent(WebSocketSession session, String fileId) throws IOException {
+        String content = fileContents.get(fileId);
+
+        if (content == null) {
+            // get data from DB
+            content = fileService.getFileContent(Long.parseLong(fileId));
+            if (content == null || content.isEmpty()) {
+                // Early return if file is empty
+                return;
+            }
+            fileContents.put(fileId, content);
+        }
+
+        Message newMessageObj = new Message(content, "", 0, 0, true);
+        String newMessageJson = OBJECT_MAPPER.writeValueAsString(newMessageObj);
+        TextMessage newMessage = new TextMessage(newMessageJson);
+        session.sendMessage(newMessage);
+    }
+
     private void broadcast(WebSocketSession session, TextMessage message, String fileId) throws IOException {
         if (isMultithread) {
             // broadcast all content
-            ObjectMapper newMessageMapper = new ObjectMapper();
             Message newMessageObj = new Message(fileContents.get(fileId), "", 0, 0, isMultithread);
-            String newMessageJson = newMessageMapper.writeValueAsString(newMessageObj);
+            String newMessageJson = OBJECT_MAPPER .writeValueAsString(newMessageObj);
             TextMessage newMessage = new TextMessage(newMessageJson);
 
             for (WebSocketSession s : fileSessions.getOrDefault(fileId, new CopyOnWriteArrayList<>())) {
@@ -168,16 +181,14 @@ public class WebSocketService extends TextWebSocketHandler implements HandshakeI
             }
         }else {
             // Broadcast only the changes to all other clients connected to the same file
-            ObjectMapper objectMapper = new ObjectMapper();
             // Parse the JSON string into a JsonNode
-            HashMap<String, Object> map = objectMapper.readValue(message.getPayload(), new TypeReference<HashMap<String, Object>>() {});
+            HashMap<String, Object> map = OBJECT_MAPPER .readValue(message.getPayload(), new TypeReference<HashMap<String, Object>>() {});
             String value = (String) map.get("content");
             String type = (String) map.get("type");
             int length = (Integer) map.get("offset");
 
-            ObjectMapper newMessageMapper = new ObjectMapper();
             Message newMessageObj = new Message(value, type, length, prevPosition, isMultithread);
-            String newMessageJson = newMessageMapper.writeValueAsString(newMessageObj);
+            String newMessageJson = OBJECT_MAPPER .writeValueAsString(newMessageObj);
 
             for (WebSocketSession s : fileSessions.getOrDefault(fileId, new CopyOnWriteArrayList<>())) {
                 if (s.isOpen()) {
@@ -198,9 +209,8 @@ public class WebSocketService extends TextWebSocketHandler implements HandshakeI
         int actualPosition = 0;
         String value = "default";
         try {
-            ObjectMapper objectMapper = new ObjectMapper();
             // Parse the JSON string into a JsonNode
-            HashMap<String, Object> map = objectMapper.readValue(message.getPayload(), new TypeReference<HashMap<String, Object>>() {});
+            HashMap<String, Object> map = OBJECT_MAPPER .readValue(message.getPayload(), new TypeReference<HashMap<String, Object>>() {});
             int tempOffset = (Integer) map.get("offset");
             value = (String) map.get("content");
             String type = (String) map.get("type");
@@ -229,12 +239,12 @@ public class WebSocketService extends TextWebSocketHandler implements HandshakeI
                 offset += tempOffset;
                 return stringBuilder.toString();
             }else{
-                if(tempOffset == 0){
-                    // select all + delete
-                    offset = 0;
-                    prevPosition = 0;
-                    return "";
-                }else{
+//                if(tempOffset == 0){
+//                    // select all + delete
+//                    offset = 0;
+//                    prevPosition = 0;
+//                    return "";
+//                }else{
                     if (offset != 0) {
                         if (actualPosition >= prevPosition) {
                             // i do care about the offset
@@ -257,7 +267,7 @@ public class WebSocketService extends TextWebSocketHandler implements HandshakeI
                         return output;
                     }
                 }
-            }
+//            }
 
         } catch (Exception e) {
             e.printStackTrace();
