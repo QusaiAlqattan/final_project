@@ -17,7 +17,7 @@ import java.util.List;
 @Service
 public class SystemUserService {
 
-    private final PasswordEncoder passwordEncoder;  // Inject the password encoder
+    private final PasswordEncoder passwordEncoder;
 
     private final SystemUserRepository systemUserRepository;
 

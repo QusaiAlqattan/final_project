@@ -5,6 +5,10 @@ document.getElementById('registrationForm').addEventListener('submit', async fun
     const username = document.getElementById('username').value;
     const password = document.getElementById('password').value;
 
+    // Get the CSRF token and header name from meta tags
+    const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute('content');
+    const csrfHeader = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
+
     const userData = {
         username: username,
         password: password,
@@ -15,6 +19,7 @@ document.getElementById('registrationForm').addEventListener('submit', async fun
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
+            [csrfHeader]: csrfToken, // Add CSRF token to the headers
         },
         body: JSON.stringify(userData),
     });

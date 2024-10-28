@@ -11,6 +11,8 @@ document.addEventListener("DOMContentLoaded", function () {
     const folderNameInput = document.getElementById("folderName");
     const fileNameInput = document.getElementById("fileName");
     const foldersTable = document.getElementById("foldersTable").querySelector("tbody");
+    const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute('content');
+    const csrfHeader = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
 
     const currentUrl = window.location.href;
     let branchId = null;
@@ -115,7 +117,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
         try {
             await fetch(`/api/files/${fileId}`, {
-                method: 'DELETE'
+                method: 'DELETE',
+                headers: {
+                    [csrfHeader]: csrfToken, // Add CSRF token to headers
+                },
             });
             fetchFiles();
         } catch (error) {
@@ -179,7 +184,10 @@ document.addEventListener("DOMContentLoaded", function () {
     async function deleteFolderById(folderId) {
         try {
             const response = await fetch(`/api/folders/${folderId}`, {
-                method: 'DELETE'
+                method: 'DELETE',
+                headers: {
+                    [csrfHeader]: csrfToken, // Add CSRF token to headers
+                },
             });
 
             if (response.ok) {
@@ -218,7 +226,10 @@ document.addEventListener("DOMContentLoaded", function () {
         try {
             await fetch(`/api/folders/${branchId}`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    [csrfHeader]: csrfToken, // Add CSRF token to headers
+                },
                 body: JSON.stringify({ name: folderName, containerId: selectedContainer })
             });
 
@@ -252,7 +263,10 @@ document.addEventListener("DOMContentLoaded", function () {
         try {
             await fetch(`/api/files/${branchId}`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    [csrfHeader]: csrfToken, // Add CSRF token to headers
+                },
                 body: JSON.stringify({ name: fileName, containerId: selectedContainer })
             });
 

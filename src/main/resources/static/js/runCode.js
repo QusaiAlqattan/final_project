@@ -3,6 +3,8 @@ document.addEventListener("DOMContentLoaded", function () {
     const runButton = document.getElementById("run-btn");
     const outputElement = document.getElementById("output");
     const languageSelect = document.getElementById("language");
+    const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute('content');
+    const csrfHeader = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
     const fileId = window.location.pathname.split("/").pop();
 
     runButton.addEventListener('click', function() {
@@ -12,7 +14,8 @@ document.addEventListener("DOMContentLoaded", function () {
         fetch('/run-code', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                [csrfHeader]: csrfToken
             },
             body: JSON.stringify({ code, language, fileId })
         })

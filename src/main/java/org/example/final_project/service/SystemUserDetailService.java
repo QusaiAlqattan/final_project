@@ -70,12 +70,10 @@ public class SystemUserDetailService implements UserDetailsService {
             throw new UsernameNotFoundException("User not found");
         }
 
-        // Create a list to hold authorities
         List<GrantedAuthority> authorities = new ArrayList<>();
 
         // Check if the user has a role and convert it to GrantedAuthority
         if (user.getRole() != null) {
-            // Assuming Role has a getName() method that returns the role name
             authorities.add(new SimpleGrantedAuthority("ROLE_" + user.getRole().getName()));
         }
 

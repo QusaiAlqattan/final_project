@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
     <title>Manage User Roles</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <link rel="stylesheet" href="/css/admin.css">
@@ -32,6 +34,7 @@
 </a>
 
 <form action="/logout" method="post">
+    <input type="hidden" name="_csrf" th:value="${_csrf.token}"/>
     <button type="submit" class="btn btn-danger logout-button">Logout</button>
 </form>
 

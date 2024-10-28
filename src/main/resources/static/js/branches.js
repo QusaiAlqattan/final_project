@@ -1,3 +1,6 @@
+const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute('content');
+const csrfHeader = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
+
 document.addEventListener("DOMContentLoaded", function () {
     // fetch and populate branches tables and dropdowns
     fetchBranches();
@@ -46,6 +49,7 @@ async function createBranch() {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                [csrfHeader]: csrfToken, // Add CSRF token to headers
             },
             body: JSON.stringify({
                 name: branchName,
@@ -84,6 +88,7 @@ async function mergeBranches() {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                [csrfHeader]: csrfToken, // Add CSRF token to headers
             },
             body: JSON.stringify({
                 sourceBranchId: sourceBranchId,
@@ -177,6 +182,9 @@ async function deleteBranch(branchId) {
     try {
         const response = await fetch(`/api/branches/${branchId}`, {
             method: 'DELETE',
+            headers: {
+                [csrfHeader]: csrfToken, // Add CSRF token to headers
+            },
         });
 
         if (response.ok) {

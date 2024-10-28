@@ -2,6 +2,8 @@ document.addEventListener("DOMContentLoaded", function () {
     const fileId = window.location.pathname.split("/").pop(); // Extract fileId from URL
     const socket = new WebSocket(`ws://localhost:8080/ws/file/${fileId}`);
     const editor = document.getElementById("editor");
+    const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute('content');
+    const csrfHeader = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
     let oldContent = '';
 
     // Fetch and display notes for the file
@@ -136,7 +138,8 @@ document.addEventListener("DOMContentLoaded", function () {
         fetch(`/api/save/${fileId}`, {
             method: 'POST',
             headers: {
-                'Content-Type': 'text/plain'
+                'Content-Type': 'text/plain',
+                [csrfHeader]: csrfToken,
             },
             body: content
         })
@@ -189,7 +192,8 @@ document.addEventListener("DOMContentLoaded", function () {
             fetch(`/api/note/add/${fileId}`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    [csrfHeader]: csrfToken,
                 },
                 body: JSON.stringify(noteData)
             })

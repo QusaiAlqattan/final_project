@@ -1,8 +1,12 @@
+const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute('content');
+const csrfHeader = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
+
 // Fetch users and populate the table
 async function fetchUsers() {
     const response = await fetch('/admin/api/users'); // Adjust this API endpoint as needed
     const users = await response.json();
     const userTableBody = document.getElementById('userTableBody');
+    // Get the CSRF token and header name from meta tags
     userTableBody.innerHTML = ''; // Clear existing rows
 
     users.forEach(user => {
@@ -49,6 +53,7 @@ async function saveRole(userId) {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
+            [csrfHeader]: csrfToken,
         },
         body: JSON.stringify({ roleId: newRoleId }), // Send role ID
     });
@@ -65,6 +70,10 @@ async function confirmDelete(userId) {
     if (confirm('Are you sure you want to delete this user?')) {
         const response = await fetch(`/admin/api/users/${userId}`, {
             method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                [csrfHeader]: csrfToken,
+            },
         });
 
         if (response.ok) {
