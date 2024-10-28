@@ -35,7 +35,6 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-//                .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(authz -> authz
                         .requestMatchers("/register", "/login", "/oauth2/authorization/github", "js/**", "css/**", "img/**", "/ws/**").permitAll()
                         .requestMatchers("/branches/**", "/branch-detail/**", "/file/**", "/api/**", "/run-code").hasAnyRole("USER", "ADMIN")
