@@ -269,7 +269,7 @@ public class BranchService {
     }
 
     private File handleFileConflict(File sourceFile, File destinationFile) {
-        String newName = sourceFile.getName() + "_conflict_" + LocalDateTime.now();
+        String newName = sourceFile.getName() + "_conflict";
         File newFile = new File();
         newFile.setName(newName);
         newFile.setContent(sourceFile.getContent());

@@ -35,7 +35,7 @@ public class SystemUserService {
     //  !   ///////////////////////////////////////////////////////////////
     public List<SystemUserDTO> getAllUsers() {
         List<SystemUser> users = systemUserRepository.findAll();
-        List<SystemUserDTO> convertedUsers = new ArrayList<>();
+        List<SystemUserDTO> convertedUsers = new ArrayList<>(users.size());
         for (SystemUser systemUser : users) {
             convertedUsers.add(toDTO(systemUser));
         }

@@ -208,6 +208,8 @@ document.addEventListener("DOMContentLoaded", function () {
         const response = await fetch(`/api/folders/${branchId}`);
         const folders = await response.json();
 
+        if (!folderName) return;
+
         // Check if the folder name already exists
         const folderExists = folders.some(folder => folder.name === folderName);
         if (folderExists) {
@@ -220,8 +222,6 @@ document.addEventListener("DOMContentLoaded", function () {
         if (selectedContainer === "root"){
             selectedContainer = null;
         }
-
-        if (!folderName) return;
 
         try {
             await fetch(`/api/folders/${branchId}`, {
@@ -246,6 +246,8 @@ document.addEventListener("DOMContentLoaded", function () {
         const response = await fetch(`/api/files/${branchId}`);
         const files = await response.json();
 
+        if (!fileName) return;
+
         const fileExists = files.some(file => file.name === fileName);
         if (fileExists) {
             alert('File name already exists');
@@ -257,8 +259,6 @@ document.addEventListener("DOMContentLoaded", function () {
         if (selectedContainer === "root"){
             selectedContainer = null;
         }
-
-        if (!fileName) return;
 
         try {
             await fetch(`/api/files/${branchId}`, {

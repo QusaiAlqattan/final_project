@@ -23,9 +23,6 @@ public class AdminController {
 
     @GetMapping()
     public String admin_home(Model model) {
-        List<Role> roles = roleRepository.findAll(); // Get available roles
-        model.addAttribute("roles", roles);
-        model.addAttribute("user", new SystemUser()); // Bind a new User object for the form
         return "admin"; // Return the home view
     }
 }

@@ -30,7 +30,6 @@ public class CustomOAuth2User implements OAuth2User {
 
     @Override
     public String getName() {
-        // Instead of "name", check for "login" or "id" in the attributes map
         return attributes.get(nameAttributeKey) != null ? attributes.get(nameAttributeKey).toString() : "unknown";
     }
 }

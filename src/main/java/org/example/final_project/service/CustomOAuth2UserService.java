@@ -30,7 +30,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService  {
 
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) {
-        // Load user from OAuth2 provider (GitHub in your case)
+        // Load user from OAuth2 provider
         OAuth2User oAuth2User = super.loadUser(userRequest);
 
         // Add "ROLE_USER" authority
